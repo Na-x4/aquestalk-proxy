@@ -1,5 +1,5 @@
 [package]
-name = "aquestalk_proxy"
+name = "aquestalk-proxy"
 version = "0.1.0"
 authors = ["Na-x4 <Na-x4@outlook.com>"]
 edition = "2018"
