@@ -1,5 +1,8 @@
 FROM i386/debian as wine
 
+ENV DEBIAN_FRONTEND noninteractive
+ENV WINEDEBUG=-all
+
 RUN INSTALL_DEPS=' \
   curl \
   ca-certificates \
@@ -16,11 +19,11 @@ RUN INSTALL_DEPS=' \
   && apt-get purge -y --auto-remove $INSTALL_DEPS \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-ENV WINEDEBUG=-all
 
 RUN useradd -m user
 USER user
 WORKDIR /home/user
+RUN wine cmd.exe /c echo.
 
 FROM rust as builder
 
@@ -45,4 +48,5 @@ RUN cd aquestalk-proxy \
 FROM wine
 COPY --from=builder /home/user/aquestalk-proxy/app /home/user/app
 
-CMD ["wine", "/home/user/app/aquestalk-proxy.exe"]
+EXPOSE 21569
+CMD ["wine", "/home/user/app/aquestalk-proxy.exe", "--path=/home/user/app/bin", "--listen=0.0.0.0:21569"]

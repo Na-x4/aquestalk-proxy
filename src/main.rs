@@ -50,7 +50,13 @@ fn main() {
         .unwrap()
         .and_then(|t| Some(Duration::from_millis(t)));
     let limit = matches.opt_get("limit").unwrap();
-    let path = matches.opt_get_default("p",env::current_dir().unwrap() ).unwrap();
+    let path = matches
+        .opt_get_default("p", {
+            let mut path = env::current_dir().unwrap();
+            path.push("bin");
+            path
+        })
+        .unwrap();
 
     let mut server = AquesTalkProxyServer::new(&path.as_os_str()).unwrap();
     server.set_num_threads(num_threads);

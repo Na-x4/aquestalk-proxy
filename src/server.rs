@@ -1,11 +1,10 @@
 pub mod messages;
 
 use std::collections::HashMap;
-use std::ffi::OsStr;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use std::path::PathBuf;
+use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -25,7 +24,7 @@ pub struct AquesTalkProxyServer {
 impl AquesTalkProxyServer {
     pub fn new<P>(path: &P) -> Result<AquesTalkProxyServer, Box<dyn std::error::Error>>
     where
-        P: AsRef<OsStr>,
+        P: AsRef<Path>,
     {
         Ok(AquesTalkProxyServer {
             aqtks: Self::load_aqtks(path)?,
@@ -49,11 +48,9 @@ impl AquesTalkProxyServer {
 
     fn load_aqtks<P>(path: &P) -> Result<HashMap<String, AquesTalk>, Box<dyn std::error::Error>>
     where
-        P: AsRef<OsStr>,
+        P: AsRef<Path>,
     {
         let mut aqtks = HashMap::new();
-        let mut path = PathBuf::from(&path);
-        path.push("bin");
         for entry in fs::read_dir(path)? {
             let entry = entry?;
             if entry.file_type()?.is_dir() {
