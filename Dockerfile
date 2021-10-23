@@ -31,6 +31,7 @@ RUN apt-get update \
   && apt-get install --no-install-recommends -y \
   mingw-w64 \
   unzip \
+  && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
   && rustup target add i686-pc-windows-gnu
 
@@ -43,10 +44,13 @@ RUN cd aquestalk-proxy \
   && unzip aqtk_mv_20090609.zip \
   && mkdir app && cd app \
   && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxy.exe ./aquestalk-proxy.exe \
-  && mv ../AquesTalk_mv/bin/ ./bin/
+  && mv ../AquesTalk_mv/bin ./aquestalk\
+  && find ./aquestalk/ -mindepth 1 -maxdepth 1 -type d -exec cp ../AquesTalk_mv/AqLicense.txt {} \; \
+  && rm -rf ../AquesTalk_mv \
+  && cp ../README.md ./
 
 FROM wine
 COPY --from=builder /home/user/aquestalk-proxy/app /home/user/app
 
 EXPOSE 21569
-CMD ["wine", "/home/user/app/aquestalk-proxy.exe", "--path=/home/user/app/bin", "--listen=0.0.0.0:21569"]
+CMD ["wine", "/home/user/app/aquestalk-proxy.exe", "--path=/home/user/app/aquestalk", "--listen=0.0.0.0:21569"]
