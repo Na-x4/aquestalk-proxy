@@ -4,8 +4,8 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV WINEDEBUG=-all
 
 RUN INSTALL_DEPS=' \
-  curl \
   ca-certificates \
+  curl \
   gnupg2 \
   ' \
   && apt-get update \
@@ -47,7 +47,8 @@ RUN cd aquestalk-proxy \
   && mv ../AquesTalk_mv/bin ./aquestalk\
   && find ./aquestalk/ -mindepth 1 -maxdepth 1 -type d -exec cp ../AquesTalk_mv/AqLicense.txt {} \; \
   && rm -rf ../AquesTalk_mv \
-  && cp ../README.md ./
+  && cp ../README.md ./ \
+  && cp ../COPYING ./
 
 FROM wine
 COPY --from=builder /home/user/aquestalk-proxy/app /home/user/app
