@@ -1,6 +1,5 @@
 FROM i386/debian as wine
 
-ENV DEBIAN_FRONTEND noninteractive
 ENV WINEDEBUG=-all
 
 RUN INSTALL_DEPS=' \
@@ -8,8 +7,11 @@ RUN INSTALL_DEPS=' \
   curl \
   gnupg2 \
   ' \
+  && export DEBIAN_FRONTEND=noninteractive \
   && apt-get update \
   && apt-get install --no-install-recommends -y $INSTALL_DEPS \
+  gosu \
+  tini \
   && curl https://dl.winehq.org/wine-builds/winehq.key -sSf | gpg --dearmor > /usr/share/keyrings/winehq.gpg \
   && . /etc/os-release \
   && echo "deb [signed-by=/usr/share/keyrings/winehq.gpg] https://dl.winehq.org/wine-builds/debian/ $VERSION_CODENAME main" > /etc/apt/sources.list.d/wine-builds.list \
@@ -18,16 +20,14 @@ RUN INSTALL_DEPS=' \
   winehq-stable \
   && apt-get purge -y --auto-remove $INSTALL_DEPS \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN useradd -m user
-USER user
-WORKDIR /home/user
-RUN wine cmd.exe /c echo.
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd -m user \
+  && gosu user wine cmd.exe /c echo. > /dev/null 2>&1
 
 FROM rust as builder
 
-RUN apt-get update \
+RUN export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
   && apt-get install --no-install-recommends -y \
   mingw-w64 \
   unzip \
@@ -40,7 +40,7 @@ USER user
 WORKDIR /home/user
 COPY --chown=user:user / /home/user/aquestalk-proxy
 RUN cd aquestalk-proxy \
-  && cargo build --release --target i686-pc-windows-gnu \
+  && cargo build --release \
   && unzip aqtk_mv_20090609.zip \
   && mkdir app && cd app \
   && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxy.exe ./aquestalk-proxy.exe \
@@ -51,7 +51,9 @@ RUN cd aquestalk-proxy \
   && cp ../COPYING ./
 
 FROM wine
-COPY --from=builder /home/user/aquestalk-proxy/app /home/user/app
+COPY --from=builder --chown=root:root /home/user/aquestalk-proxy/app /app
 
+USER user
 EXPOSE 21569
-CMD ["wine", "/home/user/app/aquestalk-proxy.exe", "--path=/home/user/app/aquestalk", "--listen=0.0.0.0:21569"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/wine", "/app/aquestalk-proxy.exe"]
+CMD ["--path=/app/aquestalk", "--listen=0.0.0.0:21569"]
