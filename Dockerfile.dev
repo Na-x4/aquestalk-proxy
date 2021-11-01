@@ -10,7 +10,6 @@ RUN INSTALL_DEPS=' \
   && export DEBIAN_FRONTEND=noninteractive \
   && apt-get update \
   && apt-get install --no-install-recommends -y $INSTALL_DEPS \
-  gosu \
   && curl https://dl.winehq.org/wine-builds/winehq.key -sSf | gpg --dearmor > /usr/share/keyrings/winehq.gpg \
   && . /etc/os-release \
   && echo "deb [signed-by=/usr/share/keyrings/winehq.gpg] https://dl.winehq.org/wine-builds/debian/ $VERSION_CODENAME main" > /etc/apt/sources.list.d/wine-builds.list \
@@ -21,9 +20,11 @@ RUN INSTALL_DEPS=' \
   && apt-get purge -y --auto-remove $INSTALL_DEPS \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  && useradd -m user \
-  && gosu user wine cmd.exe /c echo. > /dev/null 2>&1
+  && useradd -m user
 
+ENV RUSTUP_HOME=/usr/local/rustup \
+  CARGO_HOME=/usr/local/cargo \
+  PATH=/usr/local/cargo/bin:$PATH
 RUN export DEBIAN_FRONTEND=noninteractive \
   && apt-get update \
   && apt-get install --no-install-recommends -y \
@@ -35,11 +36,9 @@ RUN export DEBIAN_FRONTEND=noninteractive \
   unzip \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  && gosu user sh -c " \
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-  && . \$HOME/.cargo/env \
-  && rustup target add i686-pc-windows-gnu \
-  "
+  && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path \
+  && chmod -R a+w $RUSTUP_HOME $CARGO_HOME \
+  && rustup target add i686-pc-windows-gnu
 
 RUN USER=user \
   && GROUP=user \
