@@ -33,6 +33,16 @@ user@docker:~$ cd aquestalk-proxy
 user@docker:~$ cargo test
 ```
 
+For Mac
+
+```
+$ docker run -it --name=dev \
+  -v "$(pwd)"/:/home/user/aquestalk-proxy/:delegated \
+  -p 21569:21569 \
+  --entrypoint '' \
+  aquestalk-proxy-dev bash
+```
+
 ## Required Notices
 
 - 本プログラムは、株式会社アクエストの規則音声合成ライブラリ「AquesTalk」を使用しています。
