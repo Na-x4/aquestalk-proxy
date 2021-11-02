@@ -41,12 +41,10 @@ WORKDIR /home/user
 COPY --chown=user:user / /home/user/aquestalk-proxy
 RUN cd aquestalk-proxy \
   && cargo build --release \
-  && unzip aqtk_mv_20090609.zip \
   && mkdir app && cd app \
   && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxy.exe ./aquestalk-proxy.exe \
-  && mv ../AquesTalk_mv/bin ./aquestalk\
-  && find ./aquestalk/ -mindepth 1 -maxdepth 1 -type d -exec cp ../AquesTalk_mv/AqLicense.txt {} \; \
-  && rm -rf ../AquesTalk_mv \
+  && ../extract-aqtk.sh \
+  && mv ../aquestalk ./aquestalk \
   && cp ../README.md ./ \
   && cp ../COPYING ./
 
