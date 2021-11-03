@@ -16,7 +16,7 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::ffi::OsStr;
+use std::ffi::{CStr, OsStr};
 use std::fmt;
 use std::fs;
 use std::ops::Deref;
@@ -39,12 +39,12 @@ impl AquesTalk {
         Ok(AquesTalk(Arc::new(Mutex::new(dll))))
     }
 
-    pub fn synthe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
+    pub unsafe fn synthe_raw(&self, koe: &CStr, speed: i32) -> Result<Wav, Error> {
         let dll = &self.0;
 
         let (wav, size) = {
             let mut dll = dll.lock().unwrap();
-            unsafe { dll.synthe(koe.as_ptr(), speed) }
+            dll.synthe(koe.as_ptr(), speed)
         };
 
         if wav.is_null() {
@@ -56,6 +56,10 @@ impl AquesTalk {
             size,
             dll: Arc::clone(dll),
         })
+    }
+
+    pub fn synthe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
+        unsafe { self.synthe_raw(koe, speed) }
     }
 }
 
