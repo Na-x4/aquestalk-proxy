@@ -16,6 +16,7 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 extern crate aquestalk_proxy as lib;
+use lib::aquestalk;
 use lib::server::AquesTalkProxyServer;
 
 use getopts::Options;
@@ -75,7 +76,7 @@ fn main() {
         })
         .unwrap();
 
-    let mut server = AquesTalkProxyServer::new(&path.as_os_str()).unwrap();
+    let mut server = AquesTalkProxyServer::new(aquestalk::load_libs(&path).unwrap()).unwrap();
     server.set_num_threads(num_threads);
     server.set_timeout(timeout);
     server.set_limit(limit);
