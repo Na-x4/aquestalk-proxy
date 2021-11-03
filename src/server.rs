@@ -18,10 +18,8 @@
 pub mod messages;
 
 use std::collections::HashMap;
-use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -39,12 +37,11 @@ pub struct AquesTalkProxyServer {
 }
 
 impl AquesTalkProxyServer {
-    pub fn new<P>(path: &P) -> Result<AquesTalkProxyServer, Box<dyn std::error::Error>>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn new(
+        libs: HashMap<String, AquesTalk>,
+    ) -> Result<AquesTalkProxyServer, Box<dyn std::error::Error>> {
         Ok(AquesTalkProxyServer {
-            aqtks: Self::load_aqtks(path)?,
+            aqtks: libs,
             num_threads: 1,
             timeout: None,
             limit: None,
@@ -61,23 +58,6 @@ impl AquesTalkProxyServer {
 
     pub fn set_limit(&mut self, limit: Option<u64>) {
         self.limit = limit;
-    }
-
-    fn load_aqtks<P>(path: &P) -> Result<HashMap<String, AquesTalk>, Box<dyn std::error::Error>>
-    where
-        P: AsRef<Path>,
-    {
-        let mut aqtks = HashMap::new();
-        for entry in fs::read_dir(path)? {
-            let entry = entry?;
-            if entry.file_type()?.is_dir() {
-                let voice_type = entry.file_name().into_string().unwrap();
-                let mut path = entry.path();
-                path.push("AquesTalk.dll");
-                aqtks.insert(voice_type, AquesTalk::new(path.into_os_string())?);
-            }
-        }
-        Ok(aqtks)
     }
 
     pub fn run<A>(&self, addr: A)
