@@ -28,7 +28,7 @@ mod dll;
 use dll::AquesTalkDll;
 
 mod koe;
-pub use koe::{Koe, KoeError};
+pub use koe::Koe;
 
 #[derive(Debug, Clone)]
 pub struct AquesTalk(Arc<Mutex<AquesTalkDll>>);

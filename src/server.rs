@@ -115,8 +115,8 @@ impl AquesTalkProxyServer {
             };
             let koe = match Koe::from_str(req.koe()) {
                 Ok(koe) => koe,
-                Err(ref err) => {
-                    serde_json::to_writer(&stream, &Res::from_error(err))?;
+                Err(err) => {
+                    serde_json::to_writer(&stream, &Res::from(err))?;
                     continue;
                 }
             };

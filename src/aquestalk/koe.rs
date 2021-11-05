@@ -18,9 +18,10 @@
 use encoding_rs::SHIFT_JIS;
 
 use std::ffi::{CStr, CString};
-use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
+
+use super::Error;
 
 pub struct Koe(CString);
 
@@ -33,53 +34,26 @@ impl Deref for Koe {
 }
 
 impl FromStr for Koe {
-    type Err = KoeError;
+    type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() == 0 || s.find(" ").is_some() {
-            return Err(KoeError {
-                kind: KoeErrorKind::Empty,
-            });
+        if s.len() == 0 {
+            return Err(Error { code: 100 });
+        }
+
+        if s.find(" ").is_some() {
+            return Err(Error { code: 102 });
         }
 
         let (koe, _, had_errors) = SHIFT_JIS.encode(s);
         if had_errors {
-            return Err(KoeError {
-                kind: KoeErrorKind::Invalid,
-            });
+            return Err(Error { code: 102 });
         }
 
         let koe = match CString::new(koe) {
-            Err(_) => {
-                return Err(KoeError {
-                    kind: KoeErrorKind::Invalid,
-                })
-            }
+            Err(_) => return Err(Error { code: 102 }),
             Ok(koe) => koe,
         };
 
         Ok(Koe(koe))
     }
 }
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct KoeError {
-    kind: KoeErrorKind,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum KoeErrorKind {
-    Empty,
-    Invalid,
-}
-
-impl fmt::Display for KoeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-            KoeErrorKind::Empty => "KoeError::Empty",
-            KoeErrorKind::Invalid => "KoeError::Invalid",
-        }
-        .fmt(f)
-    }
-}
-
-impl std::error::Error for KoeError {}
