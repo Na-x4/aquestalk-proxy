@@ -93,4 +93,13 @@ mod test {
         let koe_err = Koe::from_str(test_str);
         assert_eq!(aqtk_err.err().unwrap(), koe_err.err().unwrap());
     }
+
+    #[test]
+    fn test_koe_long_accent_phrase() {
+        let test_str = "あ".repeat(256);
+
+        let aqtk_err = aqtk_synthe(&test_str);
+        let koe_err = Koe::from_str(&test_str);
+        assert_eq!(aqtk_err.err().unwrap(), koe_err.err().unwrap());
+    }
 }
