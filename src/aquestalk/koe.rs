@@ -36,23 +36,26 @@ impl Deref for Koe {
 impl FromStr for Koe {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() == 0 {
+        if s.is_empty() {
             return Err(Error { code: 100 });
         }
 
-        if s.find(" ").is_some() {
-            return Err(Error { code: 102 });
+        if s.contains(" ") || s.contains("\0") {
+            return Err(Error { code: 105 });
+        }
+
+        for accent_phrase in s.split(&['。', '？', '、', ',', ';', '/', '+'][..]) {
+            if accent_phrase.chars().count() > 255 {
+                return Err(Error { code: 102 });
+            }
         }
 
         let (koe, _, had_errors) = SHIFT_JIS.encode(s);
         if had_errors {
-            return Err(Error { code: 102 });
+            return Err(Error { code: 105 });
         }
 
-        let koe = match CString::new(koe) {
-            Err(_) => return Err(Error { code: 102 }),
-            Ok(koe) => koe,
-        };
+        let koe = CString::new(koe).unwrap();
 
         Ok(Koe(koe))
     }
