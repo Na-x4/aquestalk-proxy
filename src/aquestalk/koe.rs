@@ -57,3 +57,29 @@ impl FromStr for Koe {
         Ok(Koe(koe))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use encoding_rs::SHIFT_JIS;
+
+    use std::{ffi::CString, str::FromStr};
+
+    use super::Koe;
+    use crate::aquestalk::{load_libs, Error as AquesTalkError, Wav};
+
+    fn aqtk_synthe(koe: &str) -> Result<Wav, AquesTalkError> {
+        let (koe, _, had_errors) = SHIFT_JIS.encode(koe);
+        assert!(!had_errors);
+        let libs = load_libs(&"./aquestalk").unwrap();
+        let f1 = libs.get("f1").unwrap();
+
+        unsafe { f1.synthe_raw(&CString::new(koe).unwrap(), 100) }
+    }
+
+    #[test]
+    fn test_koe_space() {
+        let aqtk_err = aqtk_synthe("　");
+        let koe_err = Koe::from_str(" ");
+        assert_eq!(aqtk_err.err().unwrap(), koe_err.err().unwrap());
+    }
+}
