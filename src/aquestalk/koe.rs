@@ -82,4 +82,15 @@ mod test {
         let koe_err = Koe::from_str(" ");
         assert_eq!(aqtk_err.err().unwrap(), koe_err.err().unwrap());
     }
+
+    #[test]
+    fn test_koe_non_shiftjis_char() {
+        let test_str = "🤔";
+
+        let libs = load_libs(&"./aquestalk").unwrap();
+        let f1 = libs.get("f1").unwrap();
+        let aqtk_err = unsafe { f1.synthe_raw(&CString::new(test_str).unwrap(), 100) };
+        let koe_err = Koe::from_str(test_str);
+        assert_eq!(aqtk_err.err().unwrap(), koe_err.err().unwrap());
+    }
 }
