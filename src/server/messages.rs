@@ -15,19 +15,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 
 use crate::aquestalk::Wav;
 
-#[derive(Serialize, Deserialize, Getters, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields, rename_all = "snake_case")]
 pub struct Req {
     #[serde(rename = "type", default = "default_type")]
-    voice_type: String,
+    pub voice_type: String,
     #[serde(default = "default_speed")]
-    speed: i32,
-    koe: String,
+    pub speed: i32,
+    pub koe: String,
 }
 
 fn default_type() -> String {

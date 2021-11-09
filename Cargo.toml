@@ -9,7 +9,6 @@ license = " AGPL-3.0-or-later"
 
 [dependencies]
 base64 = "0.13"
-derive-getters = "0.2.0"
 encoding_rs = "0.8"
 getopts = "0.2.21"
 libloading = "0.7"

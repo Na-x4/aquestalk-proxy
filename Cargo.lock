@@ -7,7 +7,6 @@ name = "aquestalk-proxy"
 version = "0.1.0"
 dependencies = [
  "base64",
- "derive-getters",
  "encoding_rs",
  "getopts",
  "libloading",
@@ -27,17 +26,6 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "derive-getters"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c5905670fd9c320154f3a4a01c9e609733cd7b753f3c58777ab7d5ce26686b3"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "encoding_rs"

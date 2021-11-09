@@ -103,24 +103,24 @@ impl AquesTalkProxyServer {
                     break;
                 }
             };
-            let aq = match aqtks.get(req.voice_type()) {
+            let aq = match aqtks.get(&req.voice_type) {
                 Some(aq) => aq,
                 None => {
                     serde_json::to_writer(
                         &stream,
-                        &Res::from_error_message(&format!("不明な声質 ({})", req.voice_type())),
+                        &Res::from_error_message(&format!("不明な声質 ({})", req.voice_type)),
                     )?;
                     continue;
                 }
             };
-            let koe = match Koe::from_str(req.koe()) {
+            let koe = match Koe::from_str(&req.koe) {
                 Ok(koe) => koe,
                 Err(err) => {
                     serde_json::to_writer(&stream, &Res::from(err))?;
                     continue;
                 }
             };
-            let wav = aq.synthe(&koe, *req.speed());
+            let wav = aq.synthe(&koe, req.speed);
 
             serde_json::to_writer(&stream, &Res::from(wav))?;
         }
