@@ -20,13 +20,12 @@ pub mod messages;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use std::str::FromStr;
 use std::time::Duration;
 
 use serde_json::Deserializer;
 use threadpool::ThreadPool;
 
-use crate::aquestalk::{AquesTalk, Koe};
+use crate::aquestalk::AquesTalk;
 use crate::server::messages::{Req, Res};
 
 pub struct AquesTalkProxyServer {
@@ -113,14 +112,7 @@ impl AquesTalkProxyServer {
                     continue;
                 }
             };
-            let koe = match Koe::from_str(&req.koe) {
-                Ok(koe) => koe,
-                Err(err) => {
-                    serde_json::to_writer(&stream, &Res::from(err))?;
-                    continue;
-                }
-            };
-            let wav = aq.synthe(&koe, req.speed);
+            let wav = aq.synthe(&req.koe, req.speed);
 
             serde_json::to_writer(&stream, &Res::from(wav))?;
         }

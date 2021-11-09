@@ -22,6 +22,7 @@ use std::fs;
 use std::ops::Deref;
 use std::path::Path;
 use std::slice;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 mod dll;
@@ -58,8 +59,13 @@ impl AquesTalk {
         })
     }
 
-    pub fn synthe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
+    pub fn synthe_koe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
         unsafe { self.synthe_raw(koe, speed) }
+    }
+
+    pub fn synthe(&self, koe: &str, speed: i32) -> Result<Wav, Error> {
+        let koe = Koe::from_str(koe)?;
+        self.synthe_koe(&koe, speed)
     }
 }
 
