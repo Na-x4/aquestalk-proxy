@@ -49,3 +49,24 @@ where
     writer.flush()?;
     Ok(())
 }
+
+#[cfg(test)]
+mod test {
+    use super::handle_connection;
+    use crate::{aquestalk::load_libs, server::messages::Res};
+
+    #[test]
+    fn test_connection() {
+        let libs = load_libs(&"./aquestalk").unwrap();
+        let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
+        let mut output = Vec::new();
+
+        handle_connection(input, &mut output, libs, None).unwrap();
+        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+
+        match output {
+            Res::Success { wav: _ } => (),
+            _ => unreachable!(),
+        };
+    }
+}
