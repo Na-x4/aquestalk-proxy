@@ -43,13 +43,9 @@ pub enum Res {
     Success {
         wav: String,
     },
-    #[serde(rename = "error")]
-    AquesTalkError {
-        code: i32,
-        message: String,
-    },
-    #[serde(rename = "error")]
-    ServerInternalError {
+    Error {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        code: Option<i32>,
         message: String,
     },
 }
@@ -60,7 +56,8 @@ impl Res {
     }
 
     pub fn from_error_message(s: &str) -> Self {
-        Res::ServerInternalError {
+        Res::Error {
+            code: None,
             message: s.to_string(),
         }
     }
@@ -76,8 +73,8 @@ impl From<Wav> for Res {
 
 impl From<crate::aquestalk::Error> for Res {
     fn from(err: crate::aquestalk::Error) -> Self {
-        Res::AquesTalkError {
-            code: err.code(),
+        Res::Error {
+            code: Some(err.code()),
             message: err.message().to_string(),
         }
     }
