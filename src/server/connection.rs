@@ -69,4 +69,22 @@ mod test {
             _ => unreachable!(),
         };
     }
+
+    #[test]
+    fn test_json_error() {
+        let libs = load_libs(&"./aquestalk").unwrap();
+        let input = "{\"koe\":\"こんにちわ、せ'かい\"".as_bytes();
+        let mut output = Vec::new();
+
+        handle_connection(input, &mut output, libs, None).unwrap();
+        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+
+        match output {
+            Res::Error { ref message, code } => {
+                assert_eq!(code, None);
+                assert_eq!(message, "EOF while parsing an object at line 1 column 37");
+            }
+            _ => unreachable!(),
+        };
+    }
 }
