@@ -15,18 +15,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
+mod connection;
 pub mod messages;
 
 use std::collections::HashMap;
-use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
-use serde_json::Deserializer;
 use threadpool::ThreadPool;
 
 use crate::aquestalk::AquesTalk;
-use crate::server::messages::{Req, Res};
 
 pub struct AquesTalkProxyServer {
     aqtks: HashMap<String, AquesTalk>,
@@ -80,44 +78,12 @@ impl AquesTalkProxyServer {
     }
 
     fn handle_connection(
-        mut stream: TcpStream,
+        stream: TcpStream,
         aqtks: HashMap<String, AquesTalk>,
         timeout: Option<Duration>,
         limit: Option<u64>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         stream.set_read_timeout(timeout)?;
-
-        let reader = stream.try_clone()?;
-        let reader: Box<dyn Read> = match limit {
-            Some(limit) => Box::new(reader.take(limit)),
-            None => Box::new(reader),
-        };
-        let reader = Deserializer::from_reader(reader).into_iter::<Req>();
-
-        for req in reader {
-            let req = match req {
-                Ok(req) => req,
-                Err(ref err) => {
-                    serde_json::to_writer(&stream, &Res::from_error(err))?;
-                    break;
-                }
-            };
-            let aq = match aqtks.get(&req.voice_type) {
-                Some(aq) => aq,
-                None => {
-                    serde_json::to_writer(
-                        &stream,
-                        &Res::from_error_message(&format!("不明な声質 ({})", req.voice_type)),
-                    )?;
-                    continue;
-                }
-            };
-            let wav = aq.synthe(&req.koe, req.speed);
-
-            serde_json::to_writer(&stream, &Res::from(wav))?;
-        }
-
-        stream.flush()?;
-        Ok(())
+        connection::handle_connection(stream.try_clone()?, stream.try_clone()?, aqtks, limit)
     }
 }
