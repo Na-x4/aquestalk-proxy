@@ -123,4 +123,22 @@ mod test {
             _ => unreachable!(),
         };
     }
+
+    #[test]
+    fn test_aqtk_error() {
+        let libs = load_libs(&"./aquestalk").unwrap();
+        let input = "{\"koe\":\"🤔\"}".as_bytes();
+        let mut output = Vec::new();
+
+        handle_connection(input, &mut output, libs, None).unwrap();
+        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+
+        match output {
+            Res::Error { ref message, code } => {
+                assert_eq!(code, Some(105));
+                assert_eq!(message, "音声記号列に未定義の読み記号が指定された");
+            }
+            _ => unreachable!(),
+        };
+    }
 }
