@@ -20,8 +20,8 @@ use serde::{Deserialize, Serialize};
 use crate::aquestalk::Wav;
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(deny_unknown_fields, rename_all = "snake_case")]
-pub struct Req {
+#[serde(deny_unknown_fields)]
+pub struct Request {
     #[serde(rename = "type", default = "default_type")]
     pub voice_type: String,
     #[serde(default = "default_speed")]
@@ -38,53 +38,62 @@ fn default_speed() -> i32 {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(deny_unknown_fields, tag = "type", rename_all = "snake_case")]
-pub enum Res {
-    Success {
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct Response {
+    pub is_connection_reusable: bool,
+    pub is_success: bool,
+    pub response: ResponseImpl,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields, tag = "type")]
+pub enum ResponseImpl {
+    Wav {
         wav: String,
     },
-    Error {
+    AquestalkError {
         #[serde(skip_serializing_if = "Option::is_none")]
         code: Option<i32>,
         message: String,
     },
+    JsonError {
+        message: String,
+    },
+    ConnectionError {
+        message: String,
+    },
 }
 
-impl Res {
-    pub fn from_error<T: std::error::Error>(err: &T) -> Self {
-        Self::from_error_message(&format!("{}", err))
-    }
-
-    pub fn from_error_message(s: &str) -> Self {
-        Res::Error {
+impl ResponseImpl {
+    pub fn new_voice_type_error(voice_type: String) -> Self {
+        ResponseImpl::AquestalkError {
             code: None,
-            message: s.to_string(),
+            message: format!("不明な声質 ({})", voice_type),
         }
     }
 }
 
-impl From<Wav> for Res {
+impl From<Wav> for ResponseImpl {
     fn from(wav: Wav) -> Self {
-        Res::Success {
+        ResponseImpl::Wav {
             wav: base64::encode(wav.as_ref()),
         }
     }
 }
 
-impl From<crate::aquestalk::Error> for Res {
+impl From<crate::aquestalk::Error> for ResponseImpl {
     fn from(err: crate::aquestalk::Error) -> Self {
-        Res::Error {
+        ResponseImpl::AquestalkError {
             code: Some(err.code()),
             message: err.message().to_string(),
         }
     }
 }
 
-impl From<Result<Wav, crate::aquestalk::Error>> for Res {
-    fn from(result: Result<Wav, crate::aquestalk::Error>) -> Self {
-        match result {
-            Ok(wav) => wav.into(),
-            Err(err) => err.into(),
+impl From<serde_json::Error> for ResponseImpl {
+    fn from(err: serde_json::Error) -> Self {
+        ResponseImpl::JsonError {
+            message: err.to_string(),
         }
     }
 }

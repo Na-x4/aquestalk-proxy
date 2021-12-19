@@ -5,7 +5,7 @@ use serde_json::Deserializer;
 
 use crate::aquestalk::AquesTalk;
 
-use super::messages::{Req, Res};
+use super::messages::{Request, Response, ResponseImpl};
 
 pub fn handle_connection<R, W>(
     reader: R,
@@ -53,7 +53,8 @@ where
 #[cfg(test)]
 mod test {
     use super::handle_connection;
-    use crate::{aquestalk::load_libs, server::messages::Res};
+    use crate::aquestalk::load_libs;
+    use crate::server::messages::{Response, ResponseImpl};
 
     #[test]
     fn test_connection() {
