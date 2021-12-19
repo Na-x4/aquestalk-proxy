@@ -63,10 +63,12 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        match output {
-            Res::Success { wav: _ } => (),
+        assert!(response.is_connection_reusable);
+        assert!(response.is_success);
+        match response.response {
+            ResponseImpl::Wav { wav: _ } => (),
             _ => unreachable!(),
         };
     }
@@ -78,11 +80,12 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, Some(37)).unwrap();
-        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        match output {
-            Res::Error { ref message, code } => {
-                assert_eq!(code, None);
+        assert!(!response.is_connection_reusable);
+        assert!(!response.is_success);
+        match response.response {
+            ResponseImpl::JsonError { ref message } => {
                 assert_eq!(message, "EOF while parsing an object at line 1 column 37");
             }
             _ => unreachable!(),
@@ -96,11 +99,12 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        match output {
-            Res::Error { ref message, code } => {
-                assert_eq!(code, None);
+        assert!(!response.is_connection_reusable);
+        assert!(!response.is_success);
+        match response.response {
+            ResponseImpl::JsonError { ref message } => {
                 assert_eq!(message, "EOF while parsing an object at line 1 column 37");
             }
             _ => unreachable!(),
@@ -114,10 +118,12 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        match output {
-            Res::Error { ref message, code } => {
+        assert!(response.is_connection_reusable);
+        assert!(!response.is_success);
+        match response.response {
+            ResponseImpl::AquestalkError { ref message, code } => {
                 assert_eq!(code, None);
                 assert_eq!(message, "不明な声質 (invalid type)");
             }
@@ -132,10 +138,12 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let output: Res = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        match output {
-            Res::Error { ref message, code } => {
+        assert!(response.is_connection_reusable);
+        assert!(!response.is_success);
+        match response.response {
+            ResponseImpl::AquestalkError { ref message, code } => {
                 assert_eq!(code, Some(105));
                 assert_eq!(message, "音声記号列に未定義の読み記号が指定された");
             }
