@@ -21,29 +21,62 @@ where
         Some(limit) => Box::new(reader.take(limit)),
         None => Box::new(reader),
     };
-    let reader = Deserializer::from_reader(reader).into_iter::<Req>();
+    let reader = Deserializer::from_reader(reader).into_iter::<Request>();
 
     for req in reader {
         let req = match req {
             Ok(req) => req,
-            Err(ref err) => {
-                serde_json::to_writer(&mut writer, &Res::from_error(err))?;
+            Err(err) => {
+                serde_json::to_writer(
+                    &mut writer,
+                    &Response {
+                        is_connection_reusable: false,
+                        is_success: false,
+                        response: ResponseImpl::from(err),
+                    },
+                )?;
                 break;
             }
         };
+
         let aq = match aqtks.get(&req.voice_type) {
             Some(aq) => aq,
             None => {
                 serde_json::to_writer(
                     &mut writer,
-                    &Res::from_error_message(&format!("不明な声質 ({})", req.voice_type)),
+                    &Response {
+                        is_connection_reusable: true,
+                        is_success: false,
+                        response: ResponseImpl::new_voice_type_error(req.voice_type),
+                    },
                 )?;
                 continue;
             }
         };
-        let wav = aq.synthe(&req.koe, req.speed);
 
-        serde_json::to_writer(&mut writer, &Res::from(wav))?;
+        let wav = match aq.synthe(&req.koe, req.speed) {
+            Ok(wav) => wav,
+            Err(err) => {
+                serde_json::to_writer(
+                    &mut writer,
+                    &Response {
+                        is_connection_reusable: true,
+                        is_success: false,
+                        response: ResponseImpl::from(err),
+                    },
+                )?;
+                continue;
+            }
+        };
+
+        serde_json::to_writer(
+            &mut writer,
+            &Response {
+                is_connection_reusable: true,
+                is_success: true,
+                response: ResponseImpl::from(wav),
+            },
+        )?;
     }
 
     writer.flush()?;
