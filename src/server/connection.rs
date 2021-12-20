@@ -85,9 +85,10 @@ where
 
 #[cfg(test)]
 mod test {
+    use serde_json::{json, Value};
+
     use super::handle_connection;
     use crate::aquestalk::load_libs;
-    use crate::server::messages::{Response, ResponseImpl};
 
     #[test]
     fn test_connection() {
@@ -96,14 +97,36 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        assert!(response.is_connection_reusable);
-        assert!(response.is_success);
-        match response.response {
-            ResponseImpl::Wav { wav: _ } => (),
+        match response {
+            Value::Object(object) => {
+                for (key, value) in object {
+                    if key == "isConnectionReusable" {
+                        assert_eq!(value, json!(true));
+                    } else if key == "isSuccess" {
+                        assert_eq!(value, json!(true));
+                    } else if key == "response" {
+                        match value {
+                            Value::Object(object) => {
+                                for (key, value) in object {
+                                    if key == "type" {
+                                        assert_eq!(value, json!("Wav"));
+                                    } else if key == "wav" {
+                                        assert!(value.is_string());
+                                    } else {
+                                        unreachable!();
+                                    }
+                                }
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }
+
             _ => unreachable!(),
-        };
+        }
     }
 
     #[test]
@@ -113,16 +136,20 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, Some(37)).unwrap();
-        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        assert!(!response.is_connection_reusable);
-        assert!(!response.is_success);
-        match response.response {
-            ResponseImpl::JsonError { ref message } => {
-                assert_eq!(message, "EOF while parsing an object at line 1 column 37");
+        assert_eq!(
+            response,
+            json!({
+              "isConnectionReusable": false,
+              "isSuccess": false,
+              "response": {
+                "type": "JsonError",
+                "message": "EOF while parsing an object at line 1 column 37"
+              }
             }
-            _ => unreachable!(),
-        };
+            )
+        );
     }
 
     #[test]
@@ -132,16 +159,20 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        assert!(!response.is_connection_reusable);
-        assert!(!response.is_success);
-        match response.response {
-            ResponseImpl::JsonError { ref message } => {
-                assert_eq!(message, "EOF while parsing an object at line 1 column 37");
+        assert_eq!(
+            response,
+            json!({
+              "isConnectionReusable": false,
+              "isSuccess": false,
+              "response": {
+                "type": "JsonError",
+                "message": "EOF while parsing an object at line 1 column 37"
+              }
             }
-            _ => unreachable!(),
-        };
+            )
+        );
     }
 
     #[test]
@@ -151,17 +182,20 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        assert!(response.is_connection_reusable);
-        assert!(!response.is_success);
-        match response.response {
-            ResponseImpl::AquestalkError { ref message, code } => {
-                assert_eq!(code, None);
-                assert_eq!(message, "不明な声質 (invalid type)");
+        assert_eq!(
+            response,
+            json!({
+              "isConnectionReusable": true,
+              "isSuccess": false,
+              "response": {
+                "type": "AquestalkError",
+                "message": "不明な声質 (invalid type)"
+              }
             }
-            _ => unreachable!(),
-        };
+            )
+        );
     }
 
     #[test]
@@ -171,16 +205,20 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let response: Response = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
-        assert!(response.is_connection_reusable);
-        assert!(!response.is_success);
-        match response.response {
-            ResponseImpl::AquestalkError { ref message, code } => {
-                assert_eq!(code, Some(105));
-                assert_eq!(message, "音声記号列に未定義の読み記号が指定された");
+        assert_eq!(
+            response,
+            json!({
+              "isConnectionReusable": true,
+              "isSuccess": false,
+              "response": {
+                "type": "AquestalkError",
+                "code": 105,
+                "message": "音声記号列に未定義の読み記号が指定された"
+              }
             }
-            _ => unreachable!(),
-        };
+            )
+        );
     }
 }
