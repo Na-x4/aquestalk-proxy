@@ -71,6 +71,12 @@ impl ResponseImpl {
             message: format!("不明な声質 ({})", voice_type),
         }
     }
+
+    pub fn new_limit_reached_error() -> Self {
+        ResponseImpl::ConnectionError {
+            message: "Request is too long".to_string(),
+        }
+    }
 }
 
 impl From<Wav> for ResponseImpl {

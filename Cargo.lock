@@ -10,6 +10,7 @@ dependencies = [
  "encoding_rs",
  "getopts",
  "libloading",
+ "optional_take",
  "serde",
  "serde_json",
  "threadpool",
@@ -85,6 +86,12 @@ dependencies = [
  "hermit-abi",
  "libc",
 ]
+
+[[package]]
+name = "optional_take"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f2aac37449d65494c882cf25339ae9f4bef4f21660469dfd1a5f704f95ae73b"
 
 [[package]]
 name = "proc-macro2"

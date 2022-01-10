@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 
+use optional_take::io::Takable;
 use serde_json::Deserializer;
 
 use crate::aquestalk::AquesTalk;
@@ -17,22 +18,25 @@ where
     R: Read,
     W: Write,
 {
-    let reader: Box<dyn Read> = match limit {
-        Some(limit) => Box::new(reader.take(limit)),
-        None => Box::new(reader),
-    };
-    let reader = Deserializer::from_reader(reader).into_iter::<Request>();
+    let mut reader = reader.take_optional(limit);
 
-    for req in reader {
+    let deserializer = Deserializer::from_reader(&mut reader).into_iter::<Request>();
+    for req in deserializer {
         let req = match req {
             Ok(req) => req,
             Err(err) => {
+                let response = if err.is_eof() && reader.limit() == Some(0) {
+                    ResponseImpl::new_limit_reached_error()
+                } else {
+                    ResponseImpl::from(err)
+                };
+
                 serde_json::to_writer(
                     &mut writer,
                     &Response {
                         is_connection_reusable: false,
                         is_success: false,
-                        response: ResponseImpl::from(err),
+                        response,
                     },
                 )?;
                 break;
