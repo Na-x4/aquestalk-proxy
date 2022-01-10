@@ -144,8 +144,8 @@ mod test {
               "isConnectionReusable": false,
               "isSuccess": false,
               "response": {
-                "type": "JsonError",
-                "message": "EOF while parsing an object at line 1 column 37"
+                "type": "ConnectionError",
+                "message": "Request is too long"
               }
             }
             )
