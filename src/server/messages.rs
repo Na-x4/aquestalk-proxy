@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::io;
+
 use serde::{Deserialize, Serialize};
 
 use crate::aquestalk::Wav;
@@ -98,8 +100,15 @@ impl From<crate::aquestalk::Error> for ResponseImpl {
 
 impl From<serde_json::Error> for ResponseImpl {
     fn from(err: serde_json::Error) -> Self {
-        ResponseImpl::JsonError {
-            message: err.to_string(),
+        if !err.is_io() {
+            ResponseImpl::JsonError {
+                message: err.to_string(),
+            }
+        } else {
+            let err: io::Error = err.into();
+            ResponseImpl::ConnectionError {
+                message: err.to_string(),
+            }
         }
     }
 }
