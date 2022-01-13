@@ -70,7 +70,7 @@ impl ResponseImpl {
     pub fn new_voice_type_error(voice_type: String) -> Self {
         ResponseImpl::AquestalkError {
             code: None,
-            message: format!("不明な声質 ({})", voice_type),
+            message: format!("不明な声種 ({})", voice_type),
         }
     }
 

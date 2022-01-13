@@ -195,7 +195,7 @@ mod test {
               "isSuccess": false,
               "response": {
                 "type": "AquestalkError",
-                "message": "不明な声質 (invalid type)"
+                "message": "不明な声種 (invalid type)"
               }
             }
             )
