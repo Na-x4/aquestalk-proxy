@@ -8,6 +8,19 @@ use crate::aquestalk::AquesTalk;
 
 use super::messages::{Request, Response, ResponseImpl};
 
+pub fn new_voice_type_error(voice_type: String) -> ResponseImpl {
+    ResponseImpl::AquestalkError {
+        code: None,
+        message: format!("不明な声種 ({})", voice_type),
+    }
+}
+
+pub fn new_limit_reached_error() -> ResponseImpl {
+    ResponseImpl::ConnectionError {
+        message: "Request is too long".to_string(),
+    }
+}
+
 pub fn handle_connection<R, W>(
     reader: R,
     mut writer: W,
@@ -26,7 +39,7 @@ where
             Ok(req) => req,
             Err(err) => {
                 let response = if err.is_eof() && reader.limit() == Some(0) {
-                    ResponseImpl::new_limit_reached_error()
+                    new_limit_reached_error()
                 } else {
                     ResponseImpl::from(err)
                 };
@@ -51,7 +64,7 @@ where
                     &Response {
                         is_connection_reusable: true,
                         is_success: false,
-                        response: ResponseImpl::new_voice_type_error(req.voice_type),
+                        response: new_voice_type_error(req.voice_type),
                     },
                 )?;
                 continue;
