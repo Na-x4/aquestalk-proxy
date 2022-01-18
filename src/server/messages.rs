@@ -47,6 +47,27 @@ pub struct Response {
     pub response: ResponseImpl,
 }
 
+impl Response {
+    pub fn new(status: ResponseStatus, response: ResponseImpl) -> Self {
+        let (is_success, is_connection_reusable) = match status {
+            ResponseStatus::Success => (true, true),
+            ResponseStatus::Reusable => (false, true),
+            ResponseStatus::Failure => (false, false),
+        };
+        Self {
+            is_connection_reusable,
+            is_success,
+            response,
+        }
+    }
+}
+
+pub enum ResponseStatus {
+    Success,
+    Reusable,
+    Failure,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields, tag = "type")]
 pub enum ResponseImpl {

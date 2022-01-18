@@ -6,7 +6,7 @@ use serde_json::{Deserializer, Value};
 
 use crate::aquestalk::AquesTalk;
 
-use super::messages::{Request, Response, ResponseImpl};
+use super::messages::{Request, Response, ResponseImpl, ResponseStatus};
 
 pub fn new_voice_type_error(voice_type: String) -> ResponseImpl {
     ResponseImpl::AquestalkError {
@@ -23,21 +23,13 @@ pub fn new_limit_reached_error() -> ResponseImpl {
 
 fn write_response<W>(
     writer: &mut W,
-    is_success: bool,
-    is_connection_reusable: bool,
+    status: ResponseStatus,
     response: ResponseImpl,
 ) -> serde_json::Result<()>
 where
     W: Write,
 {
-    serde_json::to_writer(
-        writer,
-        &Response {
-            is_success,
-            is_connection_reusable,
-            response,
-        },
-    )
+    serde_json::to_writer(writer, &Response::new(status, response))
 }
 
 pub fn handle_connection<R, W>(
@@ -63,7 +55,7 @@ where
                     ResponseImpl::from(err)
                 };
 
-                write_response(&mut writer, false, false, response)?;
+                write_response(&mut writer, ResponseStatus::Failure, response)?;
                 break;
             }
         };
@@ -71,7 +63,11 @@ where
         let req: Request = match serde_json::from_value(req) {
             Ok(req) => req,
             Err(err) => {
-                write_response(&mut writer, false, true, ResponseImpl::from(err))?;
+                write_response(
+                    &mut writer,
+                    ResponseStatus::Reusable,
+                    ResponseImpl::from(err),
+                )?;
                 continue;
             }
         };
@@ -81,8 +77,7 @@ where
             None => {
                 write_response(
                     &mut writer,
-                    false,
-                    true,
+                    ResponseStatus::Reusable,
                     new_voice_type_error(req.voice_type),
                 )?;
                 continue;
@@ -92,12 +87,20 @@ where
         let wav = match aq.synthe(&req.koe, req.speed) {
             Ok(wav) => wav,
             Err(err) => {
-                write_response(&mut writer, false, true, ResponseImpl::from(err))?;
+                write_response(
+                    &mut writer,
+                    ResponseStatus::Reusable,
+                    ResponseImpl::from(err),
+                )?;
                 continue;
             }
         };
 
-        write_response(&mut writer, true, true, ResponseImpl::from(wav))?;
+        write_response(
+            &mut writer,
+            ResponseStatus::Success,
+            ResponseImpl::from(wav),
+        )?;
     }
 
     writer.flush()?;
