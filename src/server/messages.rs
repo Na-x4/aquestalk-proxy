@@ -42,13 +42,13 @@ fn default_speed() -> i32 {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Response {
-    pub is_connection_reusable: bool,
     pub is_success: bool,
-    pub response: ResponseImpl,
+    pub is_connection_reusable: bool,
+    pub response: ResponsePayload,
 }
 
 impl Response {
-    pub fn new(status: ResponseStatus, response: ResponseImpl) -> Self {
+    pub fn new(status: ResponseStatus, payload: ResponsePayload) -> Self {
         let (is_success, is_connection_reusable) = match status {
             ResponseStatus::Success => (true, true),
             ResponseStatus::Reusable => (false, true),
@@ -57,7 +57,7 @@ impl Response {
         Self {
             is_connection_reusable,
             is_success,
-            response,
+            response: payload,
         }
     }
 }
@@ -70,7 +70,7 @@ pub enum ResponseStatus {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields, tag = "type")]
-pub enum ResponseImpl {
+pub enum ResponsePayload {
     Wav {
         wav: String,
     },
@@ -87,32 +87,32 @@ pub enum ResponseImpl {
     },
 }
 
-impl From<Wav> for ResponseImpl {
+impl From<Wav> for ResponsePayload {
     fn from(wav: Wav) -> Self {
-        ResponseImpl::Wav {
+        Self::Wav {
             wav: base64::encode(wav.as_ref()),
         }
     }
 }
 
-impl From<crate::aquestalk::Error> for ResponseImpl {
+impl From<crate::aquestalk::Error> for ResponsePayload {
     fn from(err: crate::aquestalk::Error) -> Self {
-        ResponseImpl::AquestalkError {
+        Self::AquestalkError {
             code: Some(err.code()),
             message: err.message().to_string(),
         }
     }
 }
 
-impl From<serde_json::Error> for ResponseImpl {
+impl From<serde_json::Error> for ResponsePayload {
     fn from(err: serde_json::Error) -> Self {
         if !err.is_io() {
-            ResponseImpl::JsonError {
+            Self::JsonError {
                 message: err.to_string(),
             }
         } else {
             let err: io::Error = err.into();
-            ResponseImpl::ConnectionError {
+            Self::ConnectionError {
                 message: err.to_string(),
             }
         }
