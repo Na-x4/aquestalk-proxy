@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 
 use optional_take::io::Takable;
-use serde_json::Deserializer;
+use serde_json::{Deserializer, Value};
 
 use crate::aquestalk::AquesTalk;
 
@@ -33,7 +33,7 @@ where
 {
     let mut reader = reader.take_optional(limit);
 
-    let deserializer = Deserializer::from_reader(&mut reader).into_iter::<Request>();
+    let deserializer = Deserializer::from_reader(&mut reader).into_iter::<Value>();
     for req in deserializer {
         let req = match req {
             Ok(req) => req,
@@ -53,6 +53,21 @@ where
                     },
                 )?;
                 break;
+            }
+        };
+
+        let req: Request = match serde_json::from_value(req) {
+            Ok(req) => req,
+            Err(err) => {
+                serde_json::to_writer(
+                    &mut writer,
+                    &Response {
+                        is_connection_reusable: true,
+                        is_success: false,
+                        response: ResponseImpl::from(err),
+                    },
+                )?;
+                continue;
             }
         };
 
@@ -186,6 +201,29 @@ mod test {
               "response": {
                 "type": "JsonError",
                 "message": "EOF while parsing an object at line 1 column 37"
+              }
+            }
+            )
+        );
+    }
+
+    #[test]
+    fn test_json_error_reusable() {
+        let libs = load_libs(&"./aquestalk").unwrap();
+        let input = "{\"koee\":\"こんにちわ、せ'かい\"}".as_bytes();
+        let mut output = Vec::new();
+
+        handle_connection(input, &mut output, libs, None).unwrap();
+        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+
+        assert_eq!(
+            response,
+            json!({
+              "isConnectionReusable": true,
+              "isSuccess": false,
+              "response": {
+                "type": "JsonError",
+                "message": "unknown field `koee`, expected one of `type`, `speed`, `koe`"
               }
             }
             )
