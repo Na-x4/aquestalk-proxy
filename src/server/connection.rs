@@ -21,6 +21,25 @@ pub fn new_limit_reached_error() -> ResponseImpl {
     }
 }
 
+fn write_response<W>(
+    writer: &mut W,
+    is_success: bool,
+    is_connection_reusable: bool,
+    response: ResponseImpl,
+) -> serde_json::Result<()>
+where
+    W: Write,
+{
+    serde_json::to_writer(
+        writer,
+        &Response {
+            is_success,
+            is_connection_reusable,
+            response,
+        },
+    )
+}
+
 pub fn handle_connection<R, W>(
     reader: R,
     mut writer: W,
@@ -44,14 +63,7 @@ where
                     ResponseImpl::from(err)
                 };
 
-                serde_json::to_writer(
-                    &mut writer,
-                    &Response {
-                        is_connection_reusable: false,
-                        is_success: false,
-                        response,
-                    },
-                )?;
+                write_response(&mut writer, false, false, response)?;
                 break;
             }
         };
@@ -59,14 +71,7 @@ where
         let req: Request = match serde_json::from_value(req) {
             Ok(req) => req,
             Err(err) => {
-                serde_json::to_writer(
-                    &mut writer,
-                    &Response {
-                        is_connection_reusable: true,
-                        is_success: false,
-                        response: ResponseImpl::from(err),
-                    },
-                )?;
+                write_response(&mut writer, false, true, ResponseImpl::from(err))?;
                 continue;
             }
         };
@@ -74,13 +79,11 @@ where
         let aq = match aqtks.get(&req.voice_type) {
             Some(aq) => aq,
             None => {
-                serde_json::to_writer(
+                write_response(
                     &mut writer,
-                    &Response {
-                        is_connection_reusable: true,
-                        is_success: false,
-                        response: new_voice_type_error(req.voice_type),
-                    },
+                    false,
+                    true,
+                    new_voice_type_error(req.voice_type),
                 )?;
                 continue;
             }
@@ -89,26 +92,12 @@ where
         let wav = match aq.synthe(&req.koe, req.speed) {
             Ok(wav) => wav,
             Err(err) => {
-                serde_json::to_writer(
-                    &mut writer,
-                    &Response {
-                        is_connection_reusable: true,
-                        is_success: false,
-                        response: ResponseImpl::from(err),
-                    },
-                )?;
+                write_response(&mut writer, false, true, ResponseImpl::from(err))?;
                 continue;
             }
         };
 
-        serde_json::to_writer(
-            &mut writer,
-            &Response {
-                is_connection_reusable: true,
-                is_success: true,
-                response: ResponseImpl::from(wav),
-            },
-        )?;
+        write_response(&mut writer, true, true, ResponseImpl::from(wav))?;
     }
 
     writer.flush()?;
