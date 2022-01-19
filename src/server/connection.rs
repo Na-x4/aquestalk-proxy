@@ -25,15 +25,17 @@ pub fn new_limit_reached_error() -> ResponsePayload {
 }
 
 fn write_response<W>(
-    writer: &mut W,
+    mut writer: W,
     status: ResponseStatus,
     payload: ResponsePayload,
     request: Option<Value>,
-) -> serde_json::Result<()>
+) -> Result<(), Box<dyn std::error::Error>>
 where
     W: Write,
 {
-    serde_json::to_writer(writer, &Response::new(status, payload, request))
+    serde_json::to_writer(&mut writer, &Response::new(status, payload, request))?;
+    writer.flush()?;
+    Ok(())
 }
 
 pub fn handle_connection<R, W>(
@@ -96,7 +98,6 @@ where
         write_response(Success, ResponsePayload::from(wav))?;
     }
 
-    writer.flush()?;
     Ok(())
 }
 
