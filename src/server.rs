@@ -16,7 +16,7 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 mod connection;
-pub mod messages;
+mod messages;
 
 use std::collections::HashMap;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
