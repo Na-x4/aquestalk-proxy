@@ -6,7 +6,10 @@ use serde_json::{Deserializer, Value};
 
 use crate::aquestalk::AquesTalk;
 
-use super::messages::{Request, Response, ResponsePayload, ResponseStatus};
+use super::messages::{
+    Request, Response, ResponsePayload,
+    ResponseStatus::{self, *},
+};
 
 pub fn new_voice_type_error(voice_type: String) -> ResponsePayload {
     ResponsePayload::AquestalkError {
@@ -25,11 +28,12 @@ fn write_response<W>(
     writer: &mut W,
     status: ResponseStatus,
     payload: ResponsePayload,
+    request: Option<Value>,
 ) -> serde_json::Result<()>
 where
     W: Write,
 {
-    serde_json::to_writer(writer, &Response::new(status, payload))
+    serde_json::to_writer(writer, &Response::new(status, payload, request))
 }
 
 pub fn handle_connection<R, W>(
@@ -55,19 +59,20 @@ where
                     ResponsePayload::from(err)
                 };
 
-                write_response(&mut writer, ResponseStatus::Failure, payload)?;
+                write_response(&mut writer, Failure, payload, None)?;
                 break;
             }
+        };
+
+        let write_response = {
+            let request = req.clone();
+            |status, payload| write_response(&mut writer, status, payload, Some(request))
         };
 
         let req: Request = match serde_json::from_value(req) {
             Ok(req) => req,
             Err(err) => {
-                write_response(
-                    &mut writer,
-                    ResponseStatus::Reusable,
-                    ResponsePayload::from(err),
-                )?;
+                write_response(Reusable, ResponsePayload::from(err))?;
                 continue;
             }
         };
@@ -75,11 +80,7 @@ where
         let aq = match aqtks.get(&req.voice_type) {
             Some(aq) => aq,
             None => {
-                write_response(
-                    &mut writer,
-                    ResponseStatus::Reusable,
-                    new_voice_type_error(req.voice_type),
-                )?;
+                write_response(Reusable, new_voice_type_error(req.voice_type))?;
                 continue;
             }
         };
@@ -87,20 +88,12 @@ where
         let wav = match aq.synthe(&req.koe, req.speed) {
             Ok(wav) => wav,
             Err(err) => {
-                write_response(
-                    &mut writer,
-                    ResponseStatus::Reusable,
-                    ResponsePayload::from(err),
-                )?;
+                write_response(Reusable, ResponsePayload::from(err))?;
                 continue;
             }
         };
 
-        write_response(
-            &mut writer,
-            ResponseStatus::Success,
-            ResponsePayload::from(wav),
-        )?;
+        write_response(Success, ResponsePayload::from(wav))?;
     }
 
     writer.flush()?;
@@ -121,36 +114,23 @@ mod test {
         let mut output = Vec::new();
 
         handle_connection(input, &mut output, libs, None).unwrap();
-        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
-
-        match response {
-            Value::Object(object) => {
-                for (key, value) in object {
-                    if key == "isConnectionReusable" {
-                        assert_eq!(value, json!(true));
-                    } else if key == "isSuccess" {
-                        assert_eq!(value, json!(true));
-                    } else if key == "response" {
-                        match value {
-                            Value::Object(object) => {
-                                for (key, value) in object {
-                                    if key == "type" {
-                                        assert_eq!(value, json!("Wav"));
-                                    } else if key == "wav" {
-                                        assert!(value.is_string());
-                                    } else {
-                                        unreachable!();
-                                    }
-                                }
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                }
-            }
-
-            _ => unreachable!(),
+        let mut response: Value =
+            serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        if response["response"]["wav"].is_string() {
+            response["response"]["wav"] = json!("===WAV DATA===");
         }
+
+        assert_eq!(
+            response,
+            json!(
+                {
+                    "isSuccess": true,
+                    "isConnectionReusable": true,
+                    "response": { "type": "Wav", "wav": "===WAV DATA===" },
+                    "request": { "koe": "こんにちわ、せ'かい" }
+                }
+            )
+        );
     }
 
     #[test]
@@ -164,14 +144,15 @@ mod test {
 
         assert_eq!(
             response,
-            json!({
-              "isConnectionReusable": false,
-              "isSuccess": false,
-              "response": {
-                "type": "ConnectionError",
-                "message": "Request is too long"
-              }
-            }
+            json!(
+                {
+                    "isSuccess": false,
+                    "isConnectionReusable": false,
+                    "response": {
+                        "type": "ConnectionError",
+                        "message": "Request is too long"
+                    }
+                }
             )
         );
     }
@@ -187,14 +168,15 @@ mod test {
 
         assert_eq!(
             response,
-            json!({
-              "isConnectionReusable": false,
-              "isSuccess": false,
-              "response": {
-                "type": "JsonError",
-                "message": "EOF while parsing an object at line 1 column 37"
-              }
-            }
+            json!(
+                {
+                    "isConnectionReusable": false,
+                    "isSuccess": false,
+                    "response": {
+                        "type": "JsonError",
+                        "message": "EOF while parsing an object at line 1 column 37"
+                    }
+                }
             )
         );
     }
@@ -210,14 +192,16 @@ mod test {
 
         assert_eq!(
             response,
-            json!({
-              "isConnectionReusable": true,
-              "isSuccess": false,
-              "response": {
-                "type": "JsonError",
-                "message": "unknown field `koee`, expected one of `type`, `speed`, `koe`"
-              }
-            }
+            json!(
+                {
+                    "isConnectionReusable": true,
+                    "isSuccess": false,
+                    "response": {
+                        "type": "JsonError",
+                        "message": "unknown field `koee`, expected one of `type`, `speed`, `koe`"
+                    },
+                    "request": { "koee": "こんにちわ、せ'かい" }
+                }
             )
         );
     }
@@ -233,14 +217,16 @@ mod test {
 
         assert_eq!(
             response,
-            json!({
-              "isConnectionReusable": true,
-              "isSuccess": false,
-              "response": {
-                "type": "AquestalkError",
-                "message": "不明な声種 (invalid type)"
-              }
-            }
+            json!(
+                {
+                    "isConnectionReusable": true,
+                    "isSuccess": false,
+                    "response": {
+                        "type": "AquestalkError",
+                        "message": "不明な声種 (invalid type)"
+                    },
+                    "request": { "type": "invalid type", "koe": "こんにちわ、せ'かい" }
+                }
             )
         );
     }
@@ -256,15 +242,17 @@ mod test {
 
         assert_eq!(
             response,
-            json!({
-              "isConnectionReusable": true,
-              "isSuccess": false,
-              "response": {
-                "type": "AquestalkError",
-                "code": 105,
-                "message": "音声記号列に未定義の読み記号が指定された"
-              }
-            }
+            json!(
+                {
+                    "isConnectionReusable": true,
+                    "isSuccess": false,
+                    "response": {
+                        "type": "AquestalkError",
+                        "code": 105,
+                        "message": "音声記号列に未定義の読み記号が指定された"
+                    },
+                    "request": { "koe": "🤔" }
+                }
             )
         );
     }

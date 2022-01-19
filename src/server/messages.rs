@@ -18,6 +18,7 @@
 use std::io;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::aquestalk::Wav;
 
@@ -45,10 +46,12 @@ pub struct Response {
     pub is_success: bool,
     pub is_connection_reusable: bool,
     pub response: ResponsePayload,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub request: Option<Value>,
 }
 
 impl Response {
-    pub fn new(status: ResponseStatus, payload: ResponsePayload) -> Self {
+    pub fn new(status: ResponseStatus, payload: ResponsePayload, request: Option<Value>) -> Self {
         let (is_success, is_connection_reusable) = match status {
             ResponseStatus::Success => (true, true),
             ResponseStatus::Reusable => (false, true),
@@ -58,6 +61,7 @@ impl Response {
             is_connection_reusable,
             is_success,
             response: payload,
+            request,
         }
     }
 }
