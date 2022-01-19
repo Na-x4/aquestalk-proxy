@@ -19,7 +19,8 @@ mod connection;
 mod messages;
 
 use std::collections::HashMap;
-use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use std::io::BufWriter;
+use std::net::{Shutdown, TcpListener, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use threadpool::ThreadPool;
@@ -84,6 +85,13 @@ impl AquesTalkProxyServer {
         limit: Option<u64>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         stream.set_read_timeout(timeout)?;
-        connection::handle_connection(stream.try_clone()?, stream.try_clone()?, aqtks, limit)
+        connection::handle_connection(
+            stream.try_clone()?,
+            BufWriter::new(stream.try_clone()?),
+            aqtks,
+            limit,
+        )?;
+        stream.shutdown(Shutdown::Write)?;
+        Ok(())
     }
 }
