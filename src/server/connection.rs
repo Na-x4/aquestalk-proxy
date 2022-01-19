@@ -49,9 +49,9 @@ where
     let mut reader = reader.take_optional(limit);
 
     let deserializer = Deserializer::from_reader(&mut reader).into_iter::<Value>();
-    for req in deserializer {
-        let req = match req {
-            Ok(req) => req,
+    for request in deserializer {
+        let request = match request {
+            Ok(request) => request,
             Err(err) => {
                 let payload = if err.is_eof() && reader.limit() == Some(0) {
                     new_limit_reached_error()
@@ -65,27 +65,27 @@ where
         };
 
         let write_response = {
-            let request = req.clone();
+            let request = request.clone();
             |status, payload| write_response(&mut writer, status, payload, Some(request))
         };
 
-        let req: Request = match serde_json::from_value(req) {
-            Ok(req) => req,
+        let request: Request = match serde_json::from_value(request) {
+            Ok(request) => request,
             Err(err) => {
                 write_response(Reusable, ResponsePayload::from(err))?;
                 continue;
             }
         };
 
-        let aq = match aqtks.get(&req.voice_type) {
+        let aq = match aqtks.get(&request.voice_type) {
             Some(aq) => aq,
             None => {
-                write_response(Reusable, new_voice_type_error(req.voice_type))?;
+                write_response(Reusable, new_voice_type_error(request.voice_type))?;
                 continue;
             }
         };
 
-        let wav = match aq.synthe(&req.koe, req.speed) {
+        let wav = match aq.synthe(&request.koe, request.speed) {
             Ok(wav) => wav,
             Err(err) => {
                 write_response(Reusable, ResponsePayload::from(err))?;
