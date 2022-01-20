@@ -20,27 +20,10 @@ $ docker run -d --platform=linux/386 -p 21569:21569 aquestalk-proxy
 ## Develop
 
 ```
+$ cargo install cross
 $ git clone https://github.com/Na-x4/aquestalk-proxy.git
 $ cd aquestalk-proxy
-$ docker build -f Dockerfile.dev -t aquestalk-proxy-dev .
-$ docker run -it --name=dev \
-  --mount type=bind,source="$(pwd)"/,target=/home/user/aquestalk-proxy/ \
-  -p 21569:21569 \
-  -u $(id -u):$(id -g) \
-  aquestalk-proxy-dev bash
-
-user@docker:~$ cd aquestalk-proxy
-user@docker:~$ cargo test
-```
-
-For Mac
-
-```
-$ docker run -it --name=dev \
-  -v "$(pwd)"/:/home/user/aquestalk-proxy/:delegated \
-  -p 21569:21569 \
-  --entrypoint '' \
-  aquestalk-proxy-dev bash
+$ cross test --target=i686-pc-windows-gnu
 ```
 
 ## Required Notices
