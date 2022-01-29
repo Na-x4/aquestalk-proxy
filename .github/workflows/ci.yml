@@ -105,7 +105,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          file: Dockerfile.release
+          file: scripts/Dockerfile.release
           platforms: linux/386
           secrets: |
             GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }}
