@@ -55,7 +55,7 @@ jobs:
       - name: Package
         run: |
           mkdir release && cd release \
-          && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxy.exe ./aquestalk-proxy.exe \
+          && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxyd.exe ./aquestalk-proxy.exe \
           && mv ../aquestalk ./aquestalk \
           && cp ../README.md ./ \
           && cp ../COPYING ./ \

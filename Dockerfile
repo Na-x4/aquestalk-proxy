@@ -42,7 +42,7 @@ COPY --chown=user:user / /home/user/aquestalk-proxy
 RUN cd aquestalk-proxy \
   && cargo build --release \
   && mkdir app && cd app \
-  && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxy.exe ./aquestalk-proxy.exe \
+  && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxyd.exe ./aquestalk-proxy.exe \
   && ../scripts/extract-aqtk.sh \
   && cp ../README.md ./ \
   && cp ../COPYING ./

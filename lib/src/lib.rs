@@ -16,4 +16,4 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 pub mod aquestalk;
-pub mod server;
+pub mod messages;

@@ -16,13 +16,13 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 mod connection;
-mod messages;
 
 use std::collections::HashMap;
 use std::io::BufWriter;
 use std::net::{Shutdown, TcpListener, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
+use aquestalk_proxy::messages;
 use threadpool::ThreadPool;
 
 use crate::aquestalk::AquesTalk;
