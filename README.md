@@ -4,10 +4,6 @@
 
 AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]を参照してください。
 
-## Licence
-
-The source code is licensed AGPLv3.
-
 ## How To Use
 
 ### Docker
@@ -20,33 +16,21 @@ $ docker run -d --platform=linux/386 -p 21569:21569 aquestalk-proxy
 ## Develop
 
 ```
+$ cargo install cross
 $ git clone https://github.com/Na-x4/aquestalk-proxy.git
 $ cd aquestalk-proxy
-$ docker build -f Dockerfile.dev -t aquestalk-proxy-dev .
-$ docker run -it --name=dev \
-  --mount type=bind,source="$(pwd)"/,target=/home/user/aquestalk-proxy/ \
-  -p 21569:21569 \
-  -u $(id -u):$(id -g) \
-  aquestalk-proxy-dev bash
-
-user@docker:~$ cd aquestalk-proxy
-user@docker:~$ cargo test
+$ cross test --target=i686-pc-windows-gnu
 ```
 
-For Mac
+## Licence
 
-```
-$ docker run -it --name=dev \
-  -v "$(pwd)"/:/home/user/aquestalk-proxy/:delegated \
-  -p 21569:21569 \
-  --entrypoint '' \
-  aquestalk-proxy-dev bash
-```
-
-## Required Notices
+- `lib` ディレクトリ以下のソースコードは MIT license と the Apache License (Version 2.0)
+  のデュアルライセンスの下で頒布されています。
+- それ以外のソースコードは GNU Affero General Public License の下で頒布されています。
 
 - 本プログラムは、株式会社アクエストの規則音声合成ライブラリ「AquesTalk」を使用しています。
-- `aquestalk` ディレクトリ以下のファイル、及び `aqtk_mv_20090609.zip` ファイルの著作権は同社に帰属します。
+  - `aquestalk` ディレクトリ以下のファイル、及び `aqtk_mv_20090609.zip` ファイルの著作権は同社に
+    帰属します。
   - 詳細は `AqLicense.txt` をご覧ください。
 
 [blog.a-quest]: http://blog-yama.a-quest.com/?eid=970181

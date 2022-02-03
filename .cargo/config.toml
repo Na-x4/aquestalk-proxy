@@ -1,5 +1,2 @@
 [build]
 target = "i686-pc-windows-gnu"
-
-[target.i686-pc-windows-gnu]
-runner = "wine"

@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
+mod server;
+
 extern crate aquestalk_proxy as lib;
 use lib::aquestalk;
-use lib::server::AquesTalkProxyServer;
+use server::AquesTalkProxyServer;
 
 use getopts::Options;
 
