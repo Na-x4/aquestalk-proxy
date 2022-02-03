@@ -17,78 +17,107 @@
 
 use std::collections::HashMap;
 use std::io::BufWriter;
-use std::net::{Shutdown, TcpListener, TcpStream, ToSocketAddrs};
+use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::time::Duration;
 
+use getopts::Options;
 use threadpool::ThreadPool;
 
-use crate::aquestalk::AquesTalk;
+use aquestalk_proxy::aquestalk::AquesTalk;
 
-pub struct AquesTalkProxyServer {
-    aqtks: HashMap<String, AquesTalk>,
+struct TcpProxyOptions {
+    addr: SocketAddr,
     num_threads: usize,
     timeout: Option<Duration>,
     limit: Option<u64>,
 }
 
-impl AquesTalkProxyServer {
-    pub fn new(
-        libs: HashMap<String, AquesTalk>,
-    ) -> Result<AquesTalkProxyServer, Box<dyn std::error::Error>> {
-        Ok(AquesTalkProxyServer {
-            aqtks: libs,
-            num_threads: 1,
-            timeout: None,
-            limit: None,
-        })
-    }
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} tcp [options]", program);
+    print!("{}", opts.usage(&brief));
+}
 
-    pub fn set_num_threads(&mut self, num_threads: usize) {
-        self.num_threads = num_threads;
-    }
+fn parse_options(program: &str, args: &[String]) -> Option<TcpProxyOptions> {
+    let mut opts = Options::new();
+    opts.optopt(
+        "l",
+        "listen",
+        "specify the port/address to listen on",
+        "ADDR",
+    );
+    opts.optopt("n", "threads", "specifies the number of threads", "NUM");
+    opts.optopt("", "timeout", "", "MILLIS");
+    opts.optopt("", "limit", "", "BYTES");
+    opts.optflag("h", "help", "print this help menu");
 
-    pub fn set_timeout(&mut self, dur: Option<Duration>) {
-        self.timeout = dur;
-    }
-
-    pub fn set_limit(&mut self, limit: Option<u64>) {
-        self.limit = limit;
-    }
-
-    pub fn run<A>(&self, addr: A)
-    where
-        A: ToSocketAddrs,
-    {
-        let listener = TcpListener::bind(addr).unwrap();
-        let pool = ThreadPool::new(self.num_threads);
-
-        for stream in listener.incoming() {
-            let stream = stream.unwrap();
-            let aqtks = self.aqtks.clone();
-            let timeout = self.timeout;
-            let limit = self.limit;
-
-            pool.execute(move || {
-                Self::handle_connection(stream, aqtks, timeout, limit)
-                    .unwrap_or_else(|err| eprintln!("{}", err));
-            });
+    let matches = match opts.parse(args) {
+        Ok(m) => m,
+        Err(f) => {
+            panic!("{}", f.to_string())
         }
+    };
+
+    if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return None;
     }
 
-    fn handle_connection(
-        stream: TcpStream,
-        aqtks: HashMap<String, AquesTalk>,
-        timeout: Option<Duration>,
-        limit: Option<u64>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        stream.set_read_timeout(timeout)?;
-        super::handle_connection(
-            stream.try_clone()?,
-            BufWriter::new(stream.try_clone()?),
-            aqtks,
-            limit,
-        )?;
-        stream.shutdown(Shutdown::Write)?;
-        Ok(())
+    let addr = matches
+        .opt_get_default::<SocketAddr>(
+            "l",
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 21569),
+        )
+        .unwrap();
+    let num_threads = matches.opt_get_default("n", 1).unwrap();
+    let timeout = matches
+        .opt_get("timeout")
+        .unwrap()
+        .and_then(|t| Some(Duration::from_millis(t)));
+    let limit = matches.opt_get("limit").unwrap();
+
+    Some(TcpProxyOptions {
+        addr,
+        num_threads,
+        timeout,
+        limit,
+    })
+}
+
+fn handle_connection(
+    stream: TcpStream,
+    aqtks: HashMap<String, AquesTalk>,
+    timeout: Option<Duration>,
+    limit: Option<u64>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    stream.set_read_timeout(timeout)?;
+    super::handle_connection(
+        stream.try_clone()?,
+        BufWriter::new(stream.try_clone()?),
+        aqtks,
+        limit,
+    )?;
+    stream.shutdown(Shutdown::Write)?;
+    Ok(())
+}
+
+pub fn run_tcp_proxy(program: &str, args: &[String], libs: HashMap<String, AquesTalk>) {
+    let options = match parse_options(program, args) {
+        Some(options) => options,
+        None => return,
+    };
+
+    let listener = TcpListener::bind(options.addr).unwrap();
+    let pool = ThreadPool::new(options.num_threads);
+
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+        let aqtks = libs.clone();
+        let timeout = options.timeout;
+        let limit = options.limit;
+
+        pool.execute(move || {
+            handle_connection(stream, aqtks, timeout, limit)
+                .unwrap_or_else(|err| eprintln!("{}", err));
+        });
     }
 }

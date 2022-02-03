@@ -11,7 +11,7 @@ use aquestalk_proxy::messages::{
 };
 
 mod tcp;
-pub use tcp::AquesTalkProxyServer;
+pub use tcp::run_tcp_proxy;
 
 pub fn new_voice_type_error(voice_type: String) -> ResponsePayload {
     ResponsePayload::AquestalkError {
@@ -108,7 +108,7 @@ mod test {
     use serde_json::{json, Value};
 
     use super::handle_connection;
-    use crate::aquestalk::load_libs;
+    use aquestalk_proxy::aquestalk::load_libs;
 
     #[test]
     fn test_connection() {

@@ -16,15 +16,13 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::env;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::time::Duration;
 
-use getopts::Options;
+use getopts::{Options, ParsingStyle};
 
-use aquestalk_proxy::aquestalk;
+use aquestalk_proxy::aquestalk::load_libs;
 
 mod proxy;
-use proxy::AquesTalkProxyServer;
+use proxy::run_tcp_proxy;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -36,40 +34,23 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt(
-        "l",
-        "listen",
-        "specify the port/address to listen on",
-        "ADDR",
-    );
-    opts.optopt("n", "threads", "specifies the number of threads", "NUM");
-    opts.optopt("", "timeout", "", "MILLIS");
-    opts.optopt("", "limit", "", "BYTES");
+    opts.parsing_style(ParsingStyle::StopAtFirstFree);
     opts.optopt("p", "path", "", "PATH");
     opts.optflag("h", "help", "print this help menu");
+
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
             panic!("{}", f.to_string())
         }
     };
+
     if matches.opt_present("h") {
         print_usage(&program, opts);
         return;
     }
-    let listen = matches
-        .opt_get_default::<SocketAddr>(
-            "l",
-            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 21569),
-        )
-        .unwrap();
-    let num_threads = matches.opt_get_default("n", 1).unwrap();
-    let timeout = matches
-        .opt_get("timeout")
-        .unwrap()
-        .and_then(|t| Some(Duration::from_millis(t)));
-    let limit = matches.opt_get("limit").unwrap();
-    let path = matches
+
+    let lib_path = matches
         .opt_get_default("p", {
             let mut path = env::current_dir().unwrap();
             path.push("aquestalk");
@@ -77,10 +58,15 @@ fn main() {
         })
         .unwrap();
 
-    let mut server = AquesTalkProxyServer::new(aquestalk::load_libs(&path).unwrap()).unwrap();
-    server.set_num_threads(num_threads);
-    server.set_timeout(timeout);
-    server.set_limit(limit);
-
-    server.run(listen);
+    let sub_command: &str = if !matches.free.is_empty() {
+        &matches.free[0]
+    } else {
+        print_usage(&program, opts);
+        return;
+    };
+    let sub_command_args = &matches.free[1..];
+    match sub_command {
+        "tcp" => run_tcp_proxy(&program, sub_command_args, load_libs(&lib_path).unwrap()),
+        _ => panic!("Unknown sub command ({})", sub_command),
+    }
 }
