@@ -4,12 +4,14 @@ use std::io::{Read, Write};
 use optional_take::io::Takable;
 use serde_json::{Deserializer, Value};
 
-use crate::aquestalk::AquesTalk;
-
-use super::messages::{
+use aquestalk_proxy::aquestalk::AquesTalk;
+use aquestalk_proxy::messages::{
     Request, Response, ResponsePayload,
     ResponseStatus::{self, *},
 };
+
+mod tcp;
+pub use tcp::AquesTalkProxyServer;
 
 pub fn new_voice_type_error(voice_type: String) -> ResponsePayload {
     ResponsePayload::AquestalkError {

@@ -15,17 +15,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-mod server;
-
-extern crate aquestalk_proxy as lib;
-use lib::aquestalk;
-use server::AquesTalkProxyServer;
-
-use getopts::Options;
-
 use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
+
+use getopts::Options;
+
+use aquestalk_proxy::aquestalk;
+
+mod proxy;
+use proxy::AquesTalkProxyServer;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);

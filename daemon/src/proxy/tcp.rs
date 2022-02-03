@@ -15,14 +15,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-mod connection;
-
 use std::collections::HashMap;
 use std::io::BufWriter;
 use std::net::{Shutdown, TcpListener, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
-use aquestalk_proxy::messages;
 use threadpool::ThreadPool;
 
 use crate::aquestalk::AquesTalk;
@@ -85,7 +82,7 @@ impl AquesTalkProxyServer {
         limit: Option<u64>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         stream.set_read_timeout(timeout)?;
-        connection::handle_connection(
+        super::handle_connection(
             stream.try_clone()?,
             BufWriter::new(stream.try_clone()?),
             aqtks,
