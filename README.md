@@ -4,10 +4,6 @@
 
 AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]を参照してください。
 
-## Licence
-
-The source code is licensed AGPLv3.
-
 ## How To Use
 
 ### Docker
@@ -26,10 +22,15 @@ $ cd aquestalk-proxy
 $ cross test --target=i686-pc-windows-gnu
 ```
 
-## Required Notices
+## Licence
+
+- `lib` ディレクトリ以下のソースコードは MIT license と the Apache License (Version 2.0)
+  のデュアルライセンスの下で頒布されています。
+- それ以外のソースコードは GNU Affero General Public License の下で頒布されています。
 
 - 本プログラムは、株式会社アクエストの規則音声合成ライブラリ「AquesTalk」を使用しています。
-- `aquestalk` ディレクトリ以下のファイル、及び `aqtk_mv_20090609.zip` ファイルの著作権は同社に帰属します。
+  - `aquestalk` ディレクトリ以下のファイル、及び `aqtk_mv_20090609.zip` ファイルの著作権は同社に
+    帰属します。
   - 詳細は `AqLicense.txt` をご覧ください。
 
 [blog.a-quest]: http://blog-yama.a-quest.com/?eid=970181
