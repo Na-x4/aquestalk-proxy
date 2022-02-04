@@ -22,7 +22,7 @@ use getopts::{Options, ParsingStyle};
 use aquestalk_proxy::aquestalk::load_libs;
 
 mod proxy;
-use proxy::run_tcp_proxy;
+use proxy::{run_stdio_proxy, run_tcp_proxy};
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -67,6 +67,7 @@ fn main() {
     let sub_command_args = &matches.free[1..];
     match sub_command {
         "tcp" => run_tcp_proxy(&program, sub_command_args, load_libs(&lib_path).unwrap()),
+        "stdio" => run_stdio_proxy(&program, sub_command_args, load_libs(&lib_path).unwrap()),
         _ => panic!("Unknown sub command ({})", sub_command),
     }
 }

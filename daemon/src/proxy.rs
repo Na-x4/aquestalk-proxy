@@ -10,6 +10,9 @@ use aquestalk_proxy::messages::{
     ResponseStatus::{self, *},
 };
 
+mod stdio;
+pub use stdio::run_stdio_proxy;
+
 mod tcp;
 pub use tcp::run_tcp_proxy;
 
