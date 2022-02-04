@@ -90,7 +90,7 @@ fn handle_connection(
     limit: Option<u64>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     stream.set_read_timeout(timeout)?;
-    super::handle_connection(
+    super::proxy(
         stream.try_clone()?,
         BufWriter::new(stream.try_clone()?),
         aqtks,
