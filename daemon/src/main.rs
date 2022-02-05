@@ -15,14 +15,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::env;
+use std::{env, path::PathBuf};
 
 use getopts::{Options, ParsingStyle};
 
-use aquestalk_proxy::aquestalk::load_libs;
-
 mod proxy;
 use proxy::{run_stdio_proxy, run_tcp_proxy};
+
+pub struct GeneralOptions {
+    program: String,
+    args: Vec<String>,
+    lib_path: PathBuf,
+}
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -64,10 +68,14 @@ fn main() {
         print_usage(&program, opts);
         return;
     };
-    let sub_command_args = &matches.free[1..];
+    let options = GeneralOptions {
+        program,
+        args: matches.free[1..].to_vec(),
+        lib_path,
+    };
     match sub_command {
-        "tcp" => run_tcp_proxy(&program, sub_command_args, load_libs(&lib_path).unwrap()),
-        "stdio" => run_stdio_proxy(&program, sub_command_args, load_libs(&lib_path).unwrap()),
+        "tcp" => run_tcp_proxy(options),
+        "stdio" => run_stdio_proxy(options),
         _ => panic!("Unknown sub command ({})", sub_command),
     }
 }

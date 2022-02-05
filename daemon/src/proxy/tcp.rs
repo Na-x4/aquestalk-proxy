@@ -18,14 +18,18 @@
 use std::collections::HashMap;
 use std::io::BufWriter;
 use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use getopts::Options;
 use threadpool::ThreadPool;
 
-use aquestalk_proxy::aquestalk::AquesTalk;
+use aquestalk_proxy::aquestalk::{load_libs, AquesTalk};
+
+use crate::GeneralOptions;
 
 struct TcpProxyOptions {
+    lib_path: PathBuf,
     addr: SocketAddr,
     num_threads: usize,
     timeout: Option<Duration>,
@@ -37,7 +41,13 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-fn parse_options(program: &str, args: &[String]) -> Option<TcpProxyOptions> {
+fn parse_options(
+    GeneralOptions {
+        program,
+        args,
+        lib_path,
+    }: GeneralOptions,
+) -> Option<TcpProxyOptions> {
     let mut opts = Options::new();
     opts.optopt(
         "l",
@@ -76,6 +86,7 @@ fn parse_options(program: &str, args: &[String]) -> Option<TcpProxyOptions> {
     let limit = matches.opt_get("limit").unwrap();
 
     Some(TcpProxyOptions {
+        lib_path,
         addr,
         num_threads,
         timeout,
@@ -100,12 +111,13 @@ fn handle_connection(
     Ok(())
 }
 
-pub fn run_tcp_proxy(program: &str, args: &[String], libs: HashMap<String, AquesTalk>) {
-    let options = match parse_options(program, args) {
+pub fn run_tcp_proxy(options: GeneralOptions) {
+    let options = match parse_options(options) {
         Some(options) => options,
         None => return,
     };
 
+    let libs = load_libs(&options.lib_path).unwrap();
     let listener = TcpListener::bind(options.addr).unwrap();
     let pool = ThreadPool::new(options.num_threads);
 

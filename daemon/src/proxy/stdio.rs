@@ -16,21 +16,33 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::{
-    collections::HashMap,
     io::{stdin, stdout},
+    path::PathBuf,
 };
 
-use aquestalk_proxy::aquestalk::AquesTalk;
+use aquestalk_proxy::aquestalk::load_libs;
 use getopts::Options;
 
+use crate::GeneralOptions;
+
 use super::proxy;
+
+struct StdioProxyOptions {
+    lib_path: PathBuf,
+}
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} stdio [options]", program);
     print!("{}", opts.usage(&brief));
 }
 
-fn parse_options(program: &str, args: &[String]) -> Option<()> {
+fn parse_options(
+    GeneralOptions {
+        program,
+        args,
+        lib_path,
+    }: GeneralOptions,
+) -> Option<StdioProxyOptions> {
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
 
@@ -46,14 +58,16 @@ fn parse_options(program: &str, args: &[String]) -> Option<()> {
         return None;
     }
 
-    Some(())
+    Some(StdioProxyOptions { lib_path })
 }
 
-pub fn run_stdio_proxy(program: &str, args: &[String], libs: HashMap<String, AquesTalk>) {
-    let _options = match parse_options(program, args) {
+pub fn run_stdio_proxy(options: GeneralOptions) {
+    let options = match parse_options(options) {
         Some(options) => options,
         None => return,
     };
+
+    let libs = load_libs(&options.lib_path).unwrap();
 
     proxy(stdin().lock(), stdout().lock(), libs, None).unwrap();
 }
