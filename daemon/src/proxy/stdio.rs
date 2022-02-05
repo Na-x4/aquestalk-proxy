@@ -31,9 +31,20 @@ struct StdioProxyOptions {
     lib_path: PathBuf,
 }
 
-fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} stdio [options]", program);
-    print!("{}", opts.usage(&brief));
+fn format_usage(program: &str, opts: Options) -> String {
+    format!(
+        "\
+AquesTalk-proxy Standard IO mode
+
+USAGE:
+    {} stdio [OPTIONS]
+
+OPTIONS:
+{}
+",
+        program,
+        opts.usage_with_format(|opts| { opts.collect::<Vec<String>>().join("\n") })
+    )
 }
 
 fn parse_options(
@@ -49,12 +60,13 @@ fn parse_options(
     let matches = match opts.parse(args) {
         Ok(m) => m,
         Err(f) => {
-            panic!("{}", f.to_string())
+            eprintln!("{}\nERROR: {}", format_usage(&program, opts), f.to_string());
+            return None;
         }
     };
 
     if matches.opt_present("h") {
-        print_usage(&program, opts);
+        println!("{}", format_usage(&program, opts));
         return None;
     }
 

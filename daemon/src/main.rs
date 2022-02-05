@@ -28,9 +28,24 @@ pub struct GeneralOptions {
     lib_path: PathBuf,
 }
 
-fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} [options]", program);
-    print!("{}", opts.usage(&brief));
+fn format_usage(program: &str, opts: Options) -> String {
+    format!(
+        "\
+AquesTalk-proxy
+
+USAGE:
+    {} [OPTIONS] [SUBCOMMAND]
+
+OPTIONS:
+{}
+
+SUBCOMMAND:
+    tcp                 TCP Socket mode
+    stdio               Standard IO mode
+",
+        program,
+        opts.usage_with_format(|opts| { opts.collect::<Vec<String>>().join("\n") })
+    )
 }
 
 fn main() {
@@ -45,12 +60,13 @@ fn main() {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            panic!("{}", f.to_string())
+            eprintln!("{}\nERROR: {}", format_usage(&program, opts), f.to_string());
+            return;
         }
     };
 
     if matches.opt_present("h") {
-        print_usage(&program, opts);
+        println!("{}", format_usage(&program, opts));
         return;
     }
 
@@ -65,7 +81,7 @@ fn main() {
     let sub_command: &str = if !matches.free.is_empty() {
         &matches.free[0]
     } else {
-        print_usage(&program, opts);
+        format_usage(&program, opts);
         return;
     };
     let options = GeneralOptions {
@@ -76,6 +92,13 @@ fn main() {
     match sub_command {
         "tcp" => run_tcp_proxy(options),
         "stdio" => run_stdio_proxy(options),
-        _ => panic!("Unknown sub command ({})", sub_command),
+        _ => {
+            eprintln!(
+                "{}\nERROR: Unknown sub command \"{}\"",
+                format_usage(&options.program, opts),
+                sub_command
+            );
+            return;
+        }
     }
 }
