@@ -1,4 +1,4 @@
-// AquesTalk-proxy - Copyright (C) 2021 Na-x4
+// AquesTalk-proxy - Copyright (C) 2021-2022 Na-x4
 //
 // This file is part of AquesTalk-proxy.
 //
