@@ -34,12 +34,12 @@ fn format_usage(program: &str, opts: Options) -> String {
 AquesTalk-proxy
 
 USAGE:
-    {} [OPTIONS] [SUBCOMMAND]
+    {} [OPTIONS] [MODE]
 
 OPTIONS:
 {}
 
-SUBCOMMAND:
+MODE:
     tcp                 TCP Socket mode
     stdio               Standard IO mode
 ",
@@ -78,7 +78,7 @@ fn main() {
         })
         .unwrap();
 
-    let sub_command: &str = if !matches.free.is_empty() {
+    let mode: &str = if !matches.free.is_empty() {
         &matches.free[0]
     } else {
         format_usage(&program, opts);
@@ -89,14 +89,14 @@ fn main() {
         args: matches.free[1..].to_vec(),
         lib_path,
     };
-    match sub_command {
+    match mode {
         "tcp" => run_tcp_proxy(options),
         "stdio" => run_stdio_proxy(options),
         _ => {
             eprintln!(
-                "{}\nERROR: Unknown sub command \"{}\"",
+                "{}\nERROR: Unknown mode \"{}\"",
                 format_usage(&options.program, opts),
-                sub_command
+                mode
             );
             return;
         }
