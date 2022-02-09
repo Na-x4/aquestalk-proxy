@@ -41,7 +41,7 @@ OPTIONS:
 
 MODE:
     tcp                 TCP Socket mode
-    stdio               Standard IO mode
+    stdio               Standard IO mode (Default)
 ",
         program,
         opts.usage_with_format(|opts| { opts.collect::<Vec<String>>().join("\n") })
@@ -78,15 +78,14 @@ fn main() {
         })
         .unwrap();
 
-    let mode: &str = if !matches.free.is_empty() {
-        &matches.free[0]
+    let (mode, args): (&str, Vec<String>) = if !matches.free.is_empty() {
+        (&matches.free[0], matches.free[1..].to_vec())
     } else {
-        format_usage(&program, opts);
-        return;
+        ("stdio", Vec::<String>::new())
     };
     let options = GeneralOptions {
         program,
-        args: matches.free[1..].to_vec(),
+        args,
         lib_path,
     };
     match mode {

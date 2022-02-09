@@ -10,7 +10,10 @@ AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]
 
 ```
 $ docker build -t aquestalk-proxy https://github.com/Na-x4/aquestalk-proxy.git
-$ docker run -d --platform=linux/386 -p 21569:21569 aquestalk-proxy
+$ echo "{\"koe\":\"こんにちわ、せ'かい\"}" |
+  docker run -i --platform=linux/386 aquestalk-proxy |
+  jq -r '.response.wav // halt_error' |
+  base64 -d > hello.wav
 ```
 
 ## Develop

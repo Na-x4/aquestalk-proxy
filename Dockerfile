@@ -53,4 +53,4 @@ COPY --from=builder --chown=root:root /home/user/aquestalk-proxy/app /app
 USER user
 EXPOSE 21569
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/wine", "/app/aquestalk-proxy.exe"]
-CMD ["--path=/app/aquestalk", "--listen=0.0.0.0:21569"]
+CMD ["--path=/app/aquestalk"]
