@@ -4,12 +4,17 @@ use std::io::{Read, Write};
 use optional_take::io::Takable;
 use serde_json::{Deserializer, Value};
 
-use crate::aquestalk::AquesTalk;
-
-use super::messages::{
+use aquestalk_proxy::aquestalk::AquesTalk;
+use aquestalk_proxy::messages::{
     Request, Response, ResponsePayload,
     ResponseStatus::{self, *},
 };
+
+mod stdio;
+pub use stdio::run_stdio_proxy;
+
+mod tcp;
+pub use tcp::run_tcp_proxy;
 
 pub fn new_voice_type_error(voice_type: String) -> ResponsePayload {
     ResponsePayload::AquestalkError {
@@ -19,7 +24,7 @@ pub fn new_voice_type_error(voice_type: String) -> ResponsePayload {
 }
 
 pub fn new_limit_reached_error() -> ResponsePayload {
-    ResponsePayload::ConnectionError {
+    ResponsePayload::IoError {
         message: "Request is too long".to_string(),
     }
 }
@@ -38,7 +43,7 @@ where
     Ok(())
 }
 
-pub fn handle_connection<R, W>(
+pub fn proxy<R, W>(
     reader: R,
     mut writer: W,
     aqtks: HashMap<String, AquesTalk>,
@@ -61,7 +66,7 @@ where
                     ResponsePayload::from(err)
                 };
 
-                write_response(&mut writer, Failure, payload, None)?;
+                write_response(&mut writer, Error, payload, None)?;
                 break;
             }
         };
@@ -74,7 +79,7 @@ where
         let request: Request = match serde_json::from_value(request) {
             Ok(request) => request,
             Err(err) => {
-                write_response(Reusable, ResponsePayload::from(err))?;
+                write_response(RecoverableError, ResponsePayload::from(err))?;
                 continue;
             }
         };
@@ -82,7 +87,7 @@ where
         let aq = match aqtks.get(&request.voice_type) {
             Some(aq) => aq,
             None => {
-                write_response(Reusable, new_voice_type_error(request.voice_type))?;
+                write_response(RecoverableError, new_voice_type_error(request.voice_type))?;
                 continue;
             }
         };
@@ -90,7 +95,7 @@ where
         let wav = match aq.synthe(&request.koe, request.speed) {
             Ok(wav) => wav,
             Err(err) => {
-                write_response(Reusable, ResponsePayload::from(err))?;
+                write_response(RecoverableError, ResponsePayload::from(err))?;
                 continue;
             }
         };
@@ -105,16 +110,16 @@ where
 mod test {
     use serde_json::{json, Value};
 
-    use super::handle_connection;
-    use crate::aquestalk::load_libs;
+    use super::proxy;
+    use aquestalk_proxy::aquestalk::load_libs;
 
     #[test]
-    fn test_connection() {
+    fn test_success() {
         let libs = load_libs(&"./aquestalk").unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        handle_connection(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, libs, None).unwrap();
         let mut response: Value =
             serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
         if response["response"]["wav"].is_string() {
@@ -126,7 +131,6 @@ mod test {
             json!(
                 {
                     "isSuccess": true,
-                    "isConnectionReusable": true,
                     "response": { "type": "Wav", "wav": "===WAV DATA===" },
                     "request": { "koe": "こんにちわ、せ'かい" }
                 }
@@ -140,7 +144,7 @@ mod test {
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        handle_connection(input, &mut output, libs, Some(37)).unwrap();
+        proxy(input, &mut output, libs, Some(37)).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
@@ -148,9 +152,9 @@ mod test {
             json!(
                 {
                     "isSuccess": false,
-                    "isConnectionReusable": false,
+                    "willClose": true,
                     "response": {
-                        "type": "ConnectionError",
+                        "type": "IoError",
                         "message": "Request is too long"
                     }
                 }
@@ -164,15 +168,15 @@ mod test {
         let input = "{\"koe\":\"こんにちわ、せ'かい\"".as_bytes();
         let mut output = Vec::new();
 
-        handle_connection(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, libs, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
             response,
             json!(
                 {
-                    "isConnectionReusable": false,
                     "isSuccess": false,
+                    "willClose": true,
                     "response": {
                         "type": "JsonError",
                         "message": "EOF while parsing an object at line 1 column 37"
@@ -183,19 +187,18 @@ mod test {
     }
 
     #[test]
-    fn test_json_error_reusable() {
+    fn test_json_recoverable_error() {
         let libs = load_libs(&"./aquestalk").unwrap();
         let input = "{\"koee\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        handle_connection(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, libs, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
             response,
             json!(
                 {
-                    "isConnectionReusable": true,
                     "isSuccess": false,
                     "response": {
                         "type": "JsonError",
@@ -213,14 +216,13 @@ mod test {
         let input = "{\"type\":\"invalid type\",\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        handle_connection(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, libs, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
             response,
             json!(
                 {
-                    "isConnectionReusable": true,
                     "isSuccess": false,
                     "response": {
                         "type": "AquestalkError",
@@ -238,14 +240,13 @@ mod test {
         let input = "{\"koe\":\"🤔\"}".as_bytes();
         let mut output = Vec::new();
 
-        handle_connection(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, libs, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
             response,
             json!(
                 {
-                    "isConnectionReusable": true,
                     "isSuccess": false,
                     "response": {
                         "type": "AquestalkError",

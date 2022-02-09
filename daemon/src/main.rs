@@ -15,21 +15,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-mod server;
+use std::{env, path::PathBuf};
 
-extern crate aquestalk_proxy as lib;
-use lib::aquestalk;
-use server::AquesTalkProxyServer;
+use getopts::{Options, ParsingStyle};
 
-use getopts::Options;
+mod proxy;
+use proxy::{run_stdio_proxy, run_tcp_proxy};
 
-use std::env;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::time::Duration;
+pub struct GeneralOptions {
+    program: String,
+    args: Vec<String>,
+    lib_path: PathBuf,
+}
 
-fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} [options]", program);
-    print!("{}", opts.usage(&brief));
+fn format_usage(program: &str, opts: Options) -> String {
+    format!(
+        "\
+AquesTalk-proxy
+
+USAGE:
+    {} [OPTIONS] [MODE]
+
+OPTIONS:
+{}
+
+MODE:
+    tcp                 TCP Socket mode
+    stdio               Standard IO mode (Default)
+",
+        program,
+        opts.usage_with_format(|opts| { opts.collect::<Vec<String>>().join("\n") })
+    )
 }
 
 fn main() {
@@ -37,40 +53,24 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt(
-        "l",
-        "listen",
-        "specify the port/address to listen on",
-        "ADDR",
-    );
-    opts.optopt("n", "threads", "specifies the number of threads", "NUM");
-    opts.optopt("", "timeout", "", "MILLIS");
-    opts.optopt("", "limit", "", "BYTES");
+    opts.parsing_style(ParsingStyle::StopAtFirstFree);
     opts.optopt("p", "path", "", "PATH");
     opts.optflag("h", "help", "print this help menu");
+
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            panic!("{}", f.to_string())
+            eprintln!("{}\nERROR: {}", format_usage(&program, opts), f.to_string());
+            return;
         }
     };
+
     if matches.opt_present("h") {
-        print_usage(&program, opts);
+        println!("{}", format_usage(&program, opts));
         return;
     }
-    let listen = matches
-        .opt_get_default::<SocketAddr>(
-            "l",
-            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 21569),
-        )
-        .unwrap();
-    let num_threads = matches.opt_get_default("n", 1).unwrap();
-    let timeout = matches
-        .opt_get("timeout")
-        .unwrap()
-        .and_then(|t| Some(Duration::from_millis(t)));
-    let limit = matches.opt_get("limit").unwrap();
-    let path = matches
+
+    let lib_path = matches
         .opt_get_default("p", {
             let mut path = env::current_dir().unwrap();
             path.push("aquestalk");
@@ -78,10 +78,26 @@ fn main() {
         })
         .unwrap();
 
-    let mut server = AquesTalkProxyServer::new(aquestalk::load_libs(&path).unwrap()).unwrap();
-    server.set_num_threads(num_threads);
-    server.set_timeout(timeout);
-    server.set_limit(limit);
-
-    server.run(listen);
+    let (mode, args): (&str, Vec<String>) = if !matches.free.is_empty() {
+        (&matches.free[0], matches.free[1..].to_vec())
+    } else {
+        ("stdio", Vec::<String>::new())
+    };
+    let options = GeneralOptions {
+        program,
+        args,
+        lib_path,
+    };
+    match mode {
+        "tcp" => run_tcp_proxy(options),
+        "stdio" => run_stdio_proxy(options),
+        _ => {
+            eprintln!(
+                "{}\nERROR: Unknown mode \"{}\"",
+                format_usage(&options.program, opts),
+                mode
+            );
+            return;
+        }
+    }
 }

@@ -35,7 +35,8 @@ fn default_speed() -> i32 {
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Response {
     pub is_success: bool,
-    pub is_connection_reusable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub will_close: Option<bool>,
     pub response: ResponsePayload,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub request: Option<Value>,
@@ -43,14 +44,14 @@ pub struct Response {
 
 impl Response {
     pub fn new(status: ResponseStatus, payload: ResponsePayload, request: Option<Value>) -> Self {
-        let (is_success, is_connection_reusable) = match status {
-            ResponseStatus::Success => (true, true),
-            ResponseStatus::Reusable => (false, true),
-            ResponseStatus::Failure => (false, false),
+        let (is_success, close) = match status {
+            ResponseStatus::Success => (true, None),
+            ResponseStatus::RecoverableError => (false, None),
+            ResponseStatus::Error => (false, Some(true)),
         };
         Self {
-            is_connection_reusable,
             is_success,
+            will_close: close,
             response: payload,
             request,
         }
@@ -59,8 +60,8 @@ impl Response {
 
 pub enum ResponseStatus {
     Success,
-    Reusable,
-    Failure,
+    RecoverableError,
+    Error,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -77,7 +78,7 @@ pub enum ResponsePayload {
     JsonError {
         message: String,
     },
-    ConnectionError {
+    IoError {
         message: String,
     },
 }
@@ -107,7 +108,7 @@ impl From<serde_json::Error> for ResponsePayload {
             }
         } else {
             let err: io::Error = err.into();
-            Self::ConnectionError {
+            Self::IoError {
                 message: err.to_string(),
             }
         }

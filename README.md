@@ -1,6 +1,8 @@
 # AquesTalk-proxy
 
-32bit バイナリでしか動かなかった旧ライセンス版 AquesTalk を Socket 越しに呼び出せるようにするプログラム。
+32bit バイナリでしか動かなかった旧ライセンス版 AquesTalk を外部プロセスで実行することで利用できるよう
+にするプログラム。
+インターフェースに標準入出力または TCP ソケットを使用することができる。
 
 AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]を参照してください。
 
@@ -10,7 +12,10 @@ AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]
 
 ```
 $ docker build -t aquestalk-proxy https://github.com/Na-x4/aquestalk-proxy.git
-$ docker run -d --platform=linux/386 -p 21569:21569 aquestalk-proxy
+$ echo "{\"koe\":\"こんにちわ、せ'かい\"}" |
+  docker run -i --rm --platform=linux/386 aquestalk-proxy |
+  jq -r '.response.wav // halt_error' |
+  base64 -d > hello.wav
 ```
 
 ## Develop
