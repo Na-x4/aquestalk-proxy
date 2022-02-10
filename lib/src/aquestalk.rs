@@ -6,59 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::collections::HashMap;
-use std::ffi::{CStr, OsStr};
 use std::fmt;
-use std::fs;
-use std::ops::Deref;
-use std::path::Path;
-use std::slice;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-
-mod dll;
-use dll::AquesTalkDll;
 
 mod koe;
 pub use koe::Koe;
-
-#[derive(Debug, Clone)]
-pub struct AquesTalk(Arc<Mutex<AquesTalkDll>>);
-
-impl AquesTalk {
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalk, libloading::Error> {
-        let dll = AquesTalkDll::new(filename)?;
-        Ok(AquesTalk(Arc::new(Mutex::new(dll))))
-    }
-
-    pub unsafe fn synthe_raw(&self, koe: &CStr, speed: i32) -> Result<Wav, Error> {
-        let dll = &self.0;
-
-        let (wav, size) = {
-            let mut dll = dll.lock().unwrap();
-            dll.synthe(koe.as_ptr(), speed)
-        };
-
-        if wav.is_null() {
-            return Err(Error::new(size as i32));
-        }
-
-        Ok(Wav {
-            wav,
-            size,
-            dll: Arc::clone(dll),
-        })
-    }
-
-    pub fn synthe_koe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
-        unsafe { self.synthe_raw(koe, speed) }
-    }
-
-    pub fn synthe(&self, koe: &str, speed: i32) -> Result<Wav, Error> {
-        let koe = Koe::from_str(koe)?;
-        self.synthe_koe(&koe, speed)
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
@@ -107,54 +58,3 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
-
-#[derive(Debug)]
-pub struct Wav {
-    wav: *const u8,
-    size: usize,
-    dll: Arc<Mutex<AquesTalkDll>>,
-}
-
-impl Wav {
-    pub fn size(&self) -> usize {
-        self.size
-    }
-}
-
-impl Deref for Wav {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        let wav: &[u8];
-        unsafe {
-            wav = slice::from_raw_parts(self.wav, self.size);
-        }
-        wav
-    }
-}
-
-impl Drop for Wav {
-    fn drop(&mut self) {
-        let mut dll = self.dll.lock().unwrap();
-        unsafe {
-            dll.free_wave(self.wav);
-        }
-    }
-}
-
-pub fn load_libs<P>(path: &P) -> Result<HashMap<String, AquesTalk>, Box<dyn std::error::Error>>
-where
-    P: AsRef<Path>,
-{
-    let mut aqtks = HashMap::new();
-    for entry in fs::read_dir(path)? {
-        let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            let voice_type = entry.file_name().into_string().unwrap();
-            let mut path = entry.path();
-            path.push("AquesTalk.dll");
-            aqtks.insert(voice_type, AquesTalk::new(path.into_os_string())?);
-        }
-    }
-    Ok(aqtks)
-}
