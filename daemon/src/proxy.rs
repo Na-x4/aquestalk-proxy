@@ -21,7 +21,7 @@ use std::io::{Read, Write};
 use optional_take::io::Takable;
 use serde_json::{Deserializer, Value};
 
-use aquestalk_proxy::aquestalk::AquesTalk;
+use crate::aquestalk::AquesTalk;
 use aquestalk_proxy::messages::{
     Request, Response, ResponsePayload,
     ResponseStatus::{self, *},
@@ -128,7 +128,7 @@ mod test {
     use serde_json::{json, Value};
 
     use super::proxy;
-    use aquestalk_proxy::aquestalk::load_libs;
+    use crate::aquestalk::load_libs;
 
     #[test]
     fn test_success() {

@@ -20,9 +20,9 @@ use std::{
     path::PathBuf,
 };
 
-use aquestalk_proxy::aquestalk::load_libs;
 use getopts::Options;
 
+use crate::aquestalk::load_libs;
 use crate::GeneralOptions;
 
 use super::proxy;

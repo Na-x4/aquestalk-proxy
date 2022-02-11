@@ -24,8 +24,7 @@ use std::time::Duration;
 use getopts::Options;
 use threadpool::ThreadPool;
 
-use aquestalk_proxy::aquestalk::{load_libs, AquesTalk};
-
+use crate::aquestalk::{load_libs, AquesTalk};
 use crate::GeneralOptions;
 
 struct TcpProxyOptions {
