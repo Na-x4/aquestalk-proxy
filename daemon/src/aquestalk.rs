@@ -29,6 +29,8 @@ use aquestalk_proxy::aquestalk::{Error, Koe};
 mod dll;
 use dll::AquesTalkDll;
 
+mod koe;
+
 #[derive(Debug, Clone)]
 pub struct AquesTalk(Arc<Mutex<AquesTalkDll>>);
 
