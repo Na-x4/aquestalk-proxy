@@ -117,7 +117,7 @@ where
             }
         };
 
-        write_response(Success, ResponsePayload::from(wav))?;
+        write_response(Success, ResponsePayload::from(wav.as_ref()))?;
     }
 
     Ok(())

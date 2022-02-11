@@ -11,8 +11,6 @@ use std::io;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::aquestalk::Wav;
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Request {
@@ -83,10 +81,10 @@ pub enum ResponsePayload {
     },
 }
 
-impl From<Wav> for ResponsePayload {
-    fn from(wav: Wav) -> Self {
+impl From<&'_ [u8]> for ResponsePayload {
+    fn from(wav: &'_ [u8]) -> Self {
         Self::Wav {
-            wav: base64::encode(wav.as_ref()),
+            wav: base64::encode(wav),
         }
     }
 }

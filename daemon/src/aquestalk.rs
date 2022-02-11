@@ -18,7 +18,6 @@
 use std::collections::HashMap;
 use std::ffi::{CStr, OsStr};
 use std::fs;
-use std::ops::Deref;
 use std::path::Path;
 use std::slice;
 use std::str::FromStr;
@@ -76,16 +75,8 @@ pub struct Wav {
     dll: Arc<Mutex<AquesTalkDll>>,
 }
 
-impl Wav {
-    pub fn size(&self) -> usize {
-        self.size
-    }
-}
-
-impl Deref for Wav {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
+impl AsRef<[u8]> for Wav {
+    fn as_ref(&self) -> &[u8] {
         let wav: &[u8];
         unsafe {
             wav = slice::from_raw_parts(self.wav, self.size);
