@@ -11,6 +11,15 @@ use std::fmt;
 mod koe;
 pub use koe::Koe;
 
+use crate::messages::ResponsePayload;
+
+pub trait AquesTalk<T>
+where
+    T: AsRef<[u8]>,
+{
+    fn synthe(&self, voice_type: &str, koe: &str, speed: i32) -> Result<T, ResponsePayload>;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
     code: i32,
