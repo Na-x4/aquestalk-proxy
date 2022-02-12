@@ -24,7 +24,7 @@ use std::time::Duration;
 use getopts::Options;
 use threadpool::ThreadPool;
 
-use crate::aquestalk::{load_libs, AquesTalk};
+use crate::aquestalk::{load_libs, AquesTalkDllImpl};
 use crate::GeneralOptions;
 
 struct TcpProxyOptions {
@@ -107,7 +107,7 @@ fn parse_options(
 
 fn handle_connection(
     stream: TcpStream,
-    aqtks: HashMap<String, AquesTalk>,
+    aqtks: HashMap<String, AquesTalkDllImpl>,
     timeout: Option<Duration>,
     limit: Option<u64>,
 ) -> Result<(), Box<dyn std::error::Error>> {

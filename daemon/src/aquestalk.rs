@@ -26,17 +26,17 @@ use std::sync::{Arc, Mutex};
 use aquestalk_proxy::aquestalk::{Error, Koe};
 
 mod dll;
-use dll::AquesTalkDll;
+use dll::AquesTalkDllRaw;
 
 mod koe;
 
 #[derive(Debug, Clone)]
-pub struct AquesTalk(Arc<Mutex<AquesTalkDll>>);
+pub struct AquesTalkDllImpl(Arc<Mutex<AquesTalkDllRaw>>);
 
-impl AquesTalk {
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalk, libloading::Error> {
-        let dll = AquesTalkDll::new(filename)?;
-        Ok(AquesTalk(Arc::new(Mutex::new(dll))))
+impl AquesTalkDllImpl {
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalkDllImpl, libloading::Error> {
+        let dll = AquesTalkDllRaw::new(filename)?;
+        Ok(AquesTalkDllImpl(Arc::new(Mutex::new(dll))))
     }
 
     pub unsafe fn synthe_raw(&self, koe: &CStr, speed: i32) -> Result<Wav, Error> {
@@ -72,7 +72,7 @@ impl AquesTalk {
 pub struct Wav {
     wav: *const u8,
     size: usize,
-    dll: Arc<Mutex<AquesTalkDll>>,
+    dll: Arc<Mutex<AquesTalkDllRaw>>,
 }
 
 impl AsRef<[u8]> for Wav {
@@ -94,7 +94,9 @@ impl Drop for Wav {
     }
 }
 
-pub fn load_libs<P>(path: &P) -> Result<HashMap<String, AquesTalk>, Box<dyn std::error::Error>>
+pub fn load_libs<P>(
+    path: &P,
+) -> Result<HashMap<String, AquesTalkDllImpl>, Box<dyn std::error::Error>>
 where
     P: AsRef<Path>,
 {
@@ -105,7 +107,7 @@ where
             let voice_type = entry.file_name().into_string().unwrap();
             let mut path = entry.path();
             path.push("AquesTalk.dll");
-            aqtks.insert(voice_type, AquesTalk::new(path.into_os_string())?);
+            aqtks.insert(voice_type, AquesTalkDllImpl::new(path.into_os_string())?);
         }
     }
     Ok(aqtks)

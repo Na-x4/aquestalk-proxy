@@ -22,17 +22,17 @@ type SyntheFuncPtr = unsafe extern "stdcall" fn(*const c_char, c_int, *mut c_int
 type FreeWaveFuncPtr = unsafe extern "stdcall" fn(*const c_uchar) -> ();
 
 #[derive(Debug)]
-pub struct AquesTalkDll(libloading::Library);
+pub struct AquesTalkDllRaw(libloading::Library);
 
-impl AquesTalkDll {
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalkDll, libloading::Error> {
+impl AquesTalkDllRaw {
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalkDllRaw, libloading::Error> {
         let lib;
         unsafe {
             lib = libloading::Library::new(filename)?;
             let _synthe: libloading::Symbol<SyntheFuncPtr> = lib.get(b"AquesTalk_Synthe")?;
             let _free_wave: libloading::Symbol<FreeWaveFuncPtr> = lib.get(b"AquesTalk_FreeWave")?;
         }
-        Ok(AquesTalkDll(lib))
+        Ok(AquesTalkDllRaw(lib))
     }
 
     pub unsafe fn synthe(&mut self, koe: *const c_char, speed: c_int) -> (*const c_uchar, usize) {

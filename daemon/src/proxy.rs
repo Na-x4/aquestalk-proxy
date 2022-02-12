@@ -21,7 +21,7 @@ use std::io::{Read, Write};
 use optional_take::io::Takable;
 use serde_json::{Deserializer, Value};
 
-use crate::aquestalk::AquesTalk;
+use crate::aquestalk::AquesTalkDllImpl;
 use aquestalk_proxy::messages::{
     Request, Response, ResponsePayload,
     ResponseStatus::{self, *},
@@ -63,7 +63,7 @@ where
 pub fn proxy<R, W>(
     reader: R,
     mut writer: W,
-    aqtks: HashMap<String, AquesTalk>,
+    aqtks: HashMap<String, AquesTalkDllImpl>,
     limit: Option<u64>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
