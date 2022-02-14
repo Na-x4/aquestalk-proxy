@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
 use std::io::{Read, Write};
 
+use aquestalk_proxy::aquestalk::AquesTalk;
 use optional_take::io::Takable;
 use serde_json::{Deserializer, Value};
 
-use crate::aquestalk::AquesTalkDllImpl;
 use aquestalk_proxy::messages::{
     Request, Response, ResponsePayload,
     ResponseStatus::{self, *},
@@ -33,14 +32,7 @@ pub use stdio::run_stdio_proxy;
 mod tcp;
 pub use tcp::run_tcp_proxy;
 
-pub fn new_voice_type_error(voice_type: String) -> ResponsePayload {
-    ResponsePayload::AquestalkError {
-        code: None,
-        message: format!("不明な声種 ({})", voice_type),
-    }
-}
-
-pub fn new_limit_reached_error() -> ResponsePayload {
+fn new_limit_reached_error() -> ResponsePayload {
     ResponsePayload::IoError {
         message: "Request is too long".to_string(),
     }
@@ -60,15 +52,17 @@ where
     Ok(())
 }
 
-pub fn proxy<R, W>(
+pub fn proxy<R, W, A, O>(
     reader: R,
     mut writer: W,
-    aqtks: HashMap<String, AquesTalkDllImpl>,
+    aqtk: A,
     limit: Option<u64>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
     R: Read,
     W: Write,
+    A: AquesTalk<O>,
+    O: AsRef<[u8]>,
 {
     let mut reader = reader.take_optional(limit);
 
@@ -101,23 +95,10 @@ where
             }
         };
 
-        let aq = match aqtks.get(&request.voice_type) {
-            Some(aq) => aq,
-            None => {
-                write_response(RecoverableError, new_voice_type_error(request.voice_type))?;
-                continue;
-            }
-        };
-
-        let wav = match aq.synthe(&request.koe, request.speed) {
-            Ok(wav) => wav,
-            Err(err) => {
-                write_response(RecoverableError, ResponsePayload::from(err))?;
-                continue;
-            }
-        };
-
-        write_response(Success, ResponsePayload::from(wav.as_ref()))?;
+        match aqtk.synthe(&request.voice_type, &request.koe, request.speed) {
+            Err(err) => write_response(RecoverableError, err)?,
+            Ok(wav) => write_response(Success, ResponsePayload::from(wav.as_ref()))?,
+        }
     }
 
     Ok(())
@@ -127,16 +108,17 @@ where
 mod test {
     use serde_json::{json, Value};
 
+    use crate::aquestalk::AquesTalkDll;
+
     use super::proxy;
-    use crate::aquestalk::load_libs;
 
     #[test]
     fn test_success() {
-        let libs = load_libs(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        proxy(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, aqtk, None).unwrap();
         let mut response: Value =
             serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
         if response["response"]["wav"].is_string() {
@@ -157,11 +139,11 @@ mod test {
 
     #[test]
     fn test_reach_limit() {
-        let libs = load_libs(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        proxy(input, &mut output, libs, Some(37)).unwrap();
+        proxy(input, &mut output, aqtk, Some(37)).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
@@ -181,11 +163,11 @@ mod test {
 
     #[test]
     fn test_json_error() {
-        let libs = load_libs(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"".as_bytes();
         let mut output = Vec::new();
 
-        proxy(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
@@ -205,11 +187,11 @@ mod test {
 
     #[test]
     fn test_json_recoverable_error() {
-        let libs = load_libs(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
         let input = "{\"koee\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        proxy(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
@@ -229,11 +211,11 @@ mod test {
 
     #[test]
     fn test_invalid_voice_type() {
-        let libs = load_libs(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
         let input = "{\"type\":\"invalid type\",\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
-        proxy(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
@@ -253,11 +235,11 @@ mod test {
 
     #[test]
     fn test_aqtk_error() {
-        let libs = load_libs(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
         let input = "{\"koe\":\"🤔\"}".as_bytes();
         let mut output = Vec::new();
 
-        proxy(input, &mut output, libs, None).unwrap();
+        proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
 
         assert_eq!(
