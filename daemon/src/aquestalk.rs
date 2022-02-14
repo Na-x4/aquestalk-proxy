@@ -23,12 +23,62 @@ use std::slice;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use aquestalk_proxy::aquestalk::{Error, Koe};
+use aquestalk_proxy::aquestalk::{AquesTalk, Error, Koe};
+use aquestalk_proxy::messages::ResponsePayload;
 
 mod dll;
 use dll::AquesTalkDllRaw;
 
 mod koe;
+
+fn new_unknown_voice_type_error(voice_type: &str) -> ResponsePayload {
+    ResponsePayload::AquestalkError {
+        code: None,
+        message: format!("不明な声種 ({})", voice_type),
+    }
+}
+
+#[derive(Clone)]
+pub struct AquesTalkDll(HashMap<String, AquesTalkDllImpl>);
+
+impl AquesTalkDll {
+    pub fn new<P>(path: &P) -> Result<Self, Box<dyn std::error::Error>>
+    where
+        P: AsRef<Path>,
+    {
+        let mut aqtks = HashMap::new();
+        for entry in fs::read_dir(path)? {
+            let entry = entry?;
+            if entry.file_type()?.is_dir() {
+                let voice_type = entry.file_name().into_string().unwrap();
+                let mut path = entry.path();
+                path.push("AquesTalk.dll");
+                aqtks.insert(voice_type, AquesTalkDllImpl::new(path.into_os_string())?);
+            }
+        }
+        Ok(Self(aqtks))
+    }
+}
+
+impl AquesTalk<Wav> for AquesTalkDll {
+    fn synthe(&self, voice_type: &str, koe: &str, speed: i32) -> Result<Wav, ResponsePayload> {
+        let dll = match self.0.get(&voice_type.to_string()) {
+            Some(dll) => dll,
+            None => {
+                return Err(new_unknown_voice_type_error(voice_type));
+            }
+        };
+
+        let wav = match dll.synthe(&koe.to_string(), speed) {
+            Ok(wav) => wav,
+            Err(err) => {
+                return Err(ResponsePayload::from(err));
+            }
+        };
+
+        Ok(wav)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct AquesTalkDllImpl(Arc<Mutex<AquesTalkDllRaw>>);
