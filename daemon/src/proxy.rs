@@ -52,7 +52,7 @@ where
     Ok(())
 }
 
-pub fn proxy<R, W, A, O>(
+fn proxy<R, W, A, O>(
     reader: R,
     mut writer: W,
     aqtk: A,

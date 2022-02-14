@@ -81,15 +81,15 @@ impl AquesTalk<Wav> for AquesTalkDll {
 }
 
 #[derive(Debug, Clone)]
-pub struct AquesTalkDllImpl(Arc<Mutex<AquesTalkDllRaw>>);
+struct AquesTalkDllImpl(Arc<Mutex<AquesTalkDllRaw>>);
 
 impl AquesTalkDllImpl {
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalkDllImpl, libloading::Error> {
+    fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalkDllImpl, libloading::Error> {
         let dll = AquesTalkDllRaw::new(filename)?;
         Ok(AquesTalkDllImpl(Arc::new(Mutex::new(dll))))
     }
 
-    pub unsafe fn synthe_raw(&self, koe: &CStr, speed: i32) -> Result<Wav, Error> {
+    unsafe fn synthe_raw(&self, koe: &CStr, speed: i32) -> Result<Wav, Error> {
         let dll = &self.0;
 
         let (wav, size) = {
@@ -108,11 +108,11 @@ impl AquesTalkDllImpl {
         })
     }
 
-    pub fn synthe_koe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
+    fn synthe_koe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
         unsafe { self.synthe_raw(koe, speed) }
     }
 
-    pub fn synthe(&self, koe: &str, speed: i32) -> Result<Wav, Error> {
+    fn synthe(&self, koe: &str, speed: i32) -> Result<Wav, Error> {
         let koe = Koe::from_str(koe)?;
         self.synthe_koe(&koe, speed)
     }
