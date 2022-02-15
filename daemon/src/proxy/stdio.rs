@@ -20,10 +20,9 @@ use std::{
     path::PathBuf,
 };
 
-use aquestalk_proxy::aquestalk::load_libs;
 use getopts::Options;
 
-use crate::GeneralOptions;
+use crate::{aquestalk::AquesTalkDll, GeneralOptions};
 
 use super::proxy;
 
@@ -79,7 +78,7 @@ pub fn run_stdio_proxy(options: GeneralOptions) {
         None => return,
     };
 
-    let libs = load_libs(&options.lib_path).unwrap();
+    let aqtk = AquesTalkDll::new(&options.lib_path).unwrap();
 
-    proxy(stdin().lock(), stdout().lock(), libs, None).unwrap();
+    proxy(stdin().lock(), stdout().lock(), aqtk, None).unwrap();
 }

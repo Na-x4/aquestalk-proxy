@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
 use std::io::BufWriter;
 use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -24,8 +23,7 @@ use std::time::Duration;
 use getopts::Options;
 use threadpool::ThreadPool;
 
-use aquestalk_proxy::aquestalk::{load_libs, AquesTalk};
-
+use crate::aquestalk::AquesTalkDll;
 use crate::GeneralOptions;
 
 struct TcpProxyOptions {
@@ -108,7 +106,7 @@ fn parse_options(
 
 fn handle_connection(
     stream: TcpStream,
-    aqtks: HashMap<String, AquesTalk>,
+    aqtk: AquesTalkDll,
     timeout: Option<Duration>,
     limit: Option<u64>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -116,7 +114,7 @@ fn handle_connection(
     super::proxy(
         stream.try_clone()?,
         BufWriter::new(stream.try_clone()?),
-        aqtks,
+        aqtk,
         limit,
     )?;
     stream.shutdown(Shutdown::Write)?;
@@ -129,7 +127,7 @@ pub fn run_tcp_proxy(options: GeneralOptions) {
         None => return,
     };
 
-    let libs = load_libs(&options.lib_path).unwrap();
+    let libs = AquesTalkDll::new(&options.lib_path).unwrap();
     let listener = TcpListener::bind(options.addr).unwrap();
     let pool = ThreadPool::new(options.num_threads);
 

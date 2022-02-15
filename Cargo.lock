@@ -8,7 +8,6 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "encoding_rs",
- "libloading",
  "serde",
  "serde_json",
 ]
@@ -18,7 +17,9 @@ name = "aquestalk-proxyd"
 version = "0.1.0"
 dependencies = [
  "aquestalk-proxy",
+ "encoding_rs",
  "getopts",
+ "libloading",
  "optional_take",
  "serde_json",
  "threadpool",
