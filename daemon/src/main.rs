@@ -19,8 +19,6 @@ use std::{env, path::PathBuf};
 
 use getopts::{Options, ParsingStyle};
 
-mod aquestalk;
-
 mod proxy;
 use proxy::{run_stdio_proxy, run_tcp_proxy};
 

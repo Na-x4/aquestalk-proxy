@@ -20,10 +20,10 @@ use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::time::Duration;
 
+use aquestalk_proxyd::aquestalk::AquesTalkDll;
 use getopts::Options;
 use threadpool::ThreadPool;
 
-use crate::aquestalk::AquesTalkDll;
 use crate::GeneralOptions;
 
 struct TcpProxyOptions {
