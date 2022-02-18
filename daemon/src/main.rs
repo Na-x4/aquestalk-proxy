@@ -56,7 +56,7 @@ fn main() {
 
     let mut opts = Options::new();
     opts.parsing_style(ParsingStyle::StopAtFirstFree);
-    opts.optopt("p", "path", "", "PATH");
+    opts.optopt("p", "path", "path to AquesTalk library", "PATH");
     opts.optflag("h", "help", "print this help menu");
 
     let matches = match opts.parse(&args[1..]) {

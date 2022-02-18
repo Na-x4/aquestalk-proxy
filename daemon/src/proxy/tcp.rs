@@ -64,9 +64,19 @@ fn parse_options(
         "specify the port/address to listen on",
         "ADDR",
     );
-    opts.optopt("n", "threads", "specifies the number of threads", "NUM");
-    opts.optopt("", "timeout", "", "MILLIS");
-    opts.optopt("", "limit", "", "BYTES");
+    opts.optopt("n", "threads", "number of threads", "NUM");
+    opts.optopt(
+        "",
+        "timeout",
+        "time until the connection times out",
+        "MILLIS",
+    );
+    opts.optopt(
+        "",
+        "limit",
+        "number of bytes to accept in a request",
+        "BYTES",
+    );
     opts.optflag("h", "help", "print this help menu");
 
     let matches = match opts.parse(args) {
