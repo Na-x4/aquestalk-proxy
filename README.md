@@ -18,6 +18,42 @@ $ echo "{\"koe\":\"こんにちわ、せ'かい\"}" |
   base64 -d > hello.wav
 ```
 
+## Message
+
+TypeScript での定義
+
+```ts
+interface Request {
+  type?: string; // 声種 デフォルト: f1
+  koe: string; // 音声記号列
+  speed?: number; // 発話速度[%] 50-300 の間で指定 デフォルト: 100 値を大きく設定するほど、速くなる
+}
+
+interface Result {
+  isSuccess: boolean; // true -> リクエストの結果が成功
+  willClose?: boolean; // true -> 続けて新たなリクエストを受付不可
+  response:
+    | {
+        type: "Wav"; // -> WAV データ
+        wav: string; // Base64 エンコードされた WAV データ
+      }
+    | {
+        type: "AquestalkError"; // -> AquesTalk ライブラリ内エラー
+        code?: number; // エラーコード (AquesTalk ライブラリ内でエラーが発生した場合)
+        message: string; // エラーメッセージ
+      }
+    | {
+        type: "JsonError"; // -> JSON 構文エラーまたは型エラー
+        message: String; // エラーメッセージ
+      }
+    | {
+        type: "IoError"; // -> 入出力エラー
+        message: String; // エラーメッセージ
+      };
+  request?: any; // 対応するリクエスト (JSON構文エラーまたは入出力エラーが発生しなかった場合)
+}
+```
+
 ## Develop
 
 ```
