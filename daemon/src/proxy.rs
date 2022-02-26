@@ -106,9 +106,8 @@ where
 
 #[cfg(test)]
 mod test {
+    use aquestalk_proxyd::aquestalk::AquesTalkDll;
     use serde_json::{json, Value};
-
-    use crate::aquestalk::AquesTalkDll;
 
     use super::proxy;
 

@@ -20,9 +20,10 @@ use std::{
     path::PathBuf,
 };
 
+use aquestalk_proxyd::aquestalk::AquesTalkDll;
 use getopts::Options;
 
-use crate::{aquestalk::AquesTalkDll, GeneralOptions};
+use crate::GeneralOptions;
 
 use super::proxy;
 
