@@ -18,6 +18,18 @@ $ echo "{\"koe\":\"こんにちわ、せ'かい\"}" |
   base64 -d > hello.wav
 ```
 
+## Protocol
+
+AquesTalk-proxy はシンプルな JSON ストリーミングプロトコルです。
+`Request` メッセージを送信すると、`Result` メッセージで応答します。
+
+`Result.willClose` が `true` ではない間、何度でも `Request` メッセージを送信できます。
+リクエストの間に区切り文字は必要ありません。
+
+`Result.willClose` が `true` を返した場合は回復不能なエラーが発生しています。
+TCP モードの場合はサーバー側の接続がクローズするため、再接続が必要になります。
+標準入出力モードの場合にはプロセスが終了します。再度実行してください。
+
 ## Message
 
 TypeScript での定義
