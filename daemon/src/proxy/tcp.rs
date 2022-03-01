@@ -56,7 +56,7 @@ fn parse_options(
         args,
         lib_path,
     }: GeneralOptions,
-) -> Option<TcpProxyOptions> {
+) -> Result<TcpProxyOptions, i32> {
     let mut opts = Options::new();
     opts.optopt(
         "l",
@@ -73,13 +73,13 @@ fn parse_options(
         Ok(m) => m,
         Err(f) => {
             eprintln!("{}\nERROR: {}", format_usage(&program, opts), f.to_string());
-            return None;
+            return Err(1);
         }
     };
 
     if matches.opt_present("h") {
         println!("{}", format_usage(&program, opts));
-        return None;
+        return Err(0);
     }
 
     let addr = matches
@@ -95,7 +95,7 @@ fn parse_options(
         .and_then(|t| Some(Duration::from_millis(t)));
     let limit = matches.opt_get("limit").unwrap();
 
-    Some(TcpProxyOptions {
+    Ok(TcpProxyOptions {
         lib_path,
         addr,
         num_threads,
@@ -121,10 +121,10 @@ fn handle_connection(
     Ok(())
 }
 
-pub fn run_tcp_proxy(options: GeneralOptions) {
+pub fn run_tcp_proxy(options: GeneralOptions) -> i32 {
     let options = match parse_options(options) {
-        Some(options) => options,
-        None => return,
+        Ok(options) => options,
+        Err(err) => return err,
     };
 
     let libs = AquesTalkDll::new(&options.lib_path).unwrap();
@@ -142,4 +142,6 @@ pub fn run_tcp_proxy(options: GeneralOptions) {
                 .unwrap_or_else(|err| eprintln!("{}", err));
         });
     }
+
+    0
 }

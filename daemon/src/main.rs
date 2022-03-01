@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::process::exit;
 use std::{env, path::PathBuf};
 
 use getopts::{Options, ParsingStyle};
@@ -49,6 +50,10 @@ MODE:
 }
 
 fn main() {
+    exit(run());
+}
+
+fn run() -> i32 {
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
 
@@ -61,13 +66,13 @@ fn main() {
         Ok(m) => m,
         Err(f) => {
             eprintln!("{}\nERROR: {}", format_usage(&program, opts), f.to_string());
-            return;
+            return 1;
         }
     };
 
     if matches.opt_present("h") {
         println!("{}", format_usage(&program, opts));
-        return;
+        return 0;
     }
 
     let lib_path = matches
@@ -88,7 +93,7 @@ fn main() {
         args,
         lib_path,
     };
-    match mode {
+    let exit_code = match mode {
         "tcp" => run_tcp_proxy(options),
         "stdio" => run_stdio_proxy(options),
         _ => {
@@ -97,7 +102,9 @@ fn main() {
                 format_usage(&options.program, opts),
                 mode
             );
-            return;
+            1
         }
-    }
+    };
+
+    exit_code
 }
