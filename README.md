@@ -7,14 +7,22 @@ AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]
 
 ## How To Use
 
+### Windows
+
+[リリースページ][release]から zip ファイルをダウンロードして解凍
+
+```
+> chcp 65001
+> echo {"koe":"こんにちわ、せ'かい"} | aquestalk-proxy.exe
+{"isSuccess":true,"response":{"type":"Wav","wav":"UklGRoxd...AA=="},"request":{"koe":"こんにちわ、せ'かい"}}
+```
+
 ### Docker
 
 ```
-$ docker build -t aquestalk-proxy https://github.com/Na-x4/aquestalk-proxy.git
-$ echo "{\"koe\":\"こんにちわ、せ'かい\"}" |
-  docker run -i --rm --platform=linux/386 aquestalk-proxy |
-  jq -r '.response.wav // halt_error' |
-  base64 -d > hello.wav
+$ docker pull nax4/aquestalk-proxy
+$ echo "{\"koe\":\"こんにちわ、せ'かい\"}" | docker run -i --rm --platform=linux/386 nax4/aquestalk-proxy
+{"isSuccess":true,"response":{"type":"Wav","wav":"UklGRoxd...AA=="},"request":{"koe":"こんにちわ、せ'かい"}}
 ```
 
 ## Protocol
@@ -84,3 +92,4 @@ $ cross test --target=i686-pc-windows-gnu
   - 詳細は `AqLicense.txt` をご覧ください。
 
 [blog.a-quest]: http://blog-yama.a-quest.com/?eid=970181
+[release]: https://github.com/Na-x4/aquestalk-proxy/releases
