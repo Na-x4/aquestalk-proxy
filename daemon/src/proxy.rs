@@ -48,6 +48,7 @@ where
     W: Write,
 {
     serde_json::to_writer(&mut writer, &Response::new(status, payload, request))?;
+    writer.write(b"\n")?;
     writer.flush()?;
     Ok(())
 }
