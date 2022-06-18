@@ -126,6 +126,7 @@ mod test {
             response["response"]["wav"] = json!("===WAV DATA===");
         }
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -147,6 +148,7 @@ mod test {
         proxy(input, &mut output, aqtk, Some(37)).unwrap();
         let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -171,6 +173,7 @@ mod test {
         proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -195,6 +198,7 @@ mod test {
         proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -219,6 +223,7 @@ mod test {
         proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -243,6 +248,7 @@ mod test {
         proxy(input, &mut output, aqtk, None).unwrap();
         let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
