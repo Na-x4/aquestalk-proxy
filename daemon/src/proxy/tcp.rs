@@ -16,7 +16,7 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::io::BufWriter;
-use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -28,7 +28,7 @@ use crate::GeneralOptions;
 
 struct TcpProxyOptions {
     lib_path: PathBuf,
-    addr: SocketAddr,
+    addr: String,
     num_threads: usize,
     timeout: Option<Duration>,
     limit: Option<u64>,
@@ -83,10 +83,7 @@ fn parse_options(
     }
 
     let addr = matches
-        .opt_get_default::<SocketAddr>(
-            "l",
-            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 21569),
-        )
+        .opt_get_default("l", "127.0.0.1:21569".into())
         .unwrap();
     let num_threads = matches.opt_get_default("n", 1).unwrap();
     let timeout = matches
