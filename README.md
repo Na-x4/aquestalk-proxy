@@ -63,13 +63,13 @@ interface Result {
       }
     | {
         type: "JsonError"; // -> JSON 構文エラーまたは型エラー
-        message: String; // エラーメッセージ
+        message: string; // エラーメッセージ
       }
     | {
         type: "IoError"; // -> 入出力エラー
-        message: String; // エラーメッセージ
+        message: string; // エラーメッセージ
       };
-  request?: any; // 対応するリクエスト (JSON構文エラーまたは入出力エラーが発生しなかった場合)
+  request?: any; // 対応するリクエスト (JSON 構文エラーまたは入出力エラーが発生しなかった場合)
 }
 ```
 
