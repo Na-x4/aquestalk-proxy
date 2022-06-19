@@ -16,8 +16,10 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::io::BufWriter;
-use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::Duration;
 
 use aquestalk_proxyd::aquestalk::AquesTalkDll;
@@ -28,7 +30,7 @@ use crate::GeneralOptions;
 
 struct TcpProxyOptions {
     lib_path: PathBuf,
-    addr: SocketAddr,
+    addrs: Vec<String>,
     num_threads: usize,
     timeout: Option<Duration>,
     limit: Option<u64>,
@@ -58,7 +60,7 @@ fn parse_options(
     }: GeneralOptions,
 ) -> Result<TcpProxyOptions, i32> {
     let mut opts = Options::new();
-    opts.optopt(
+    opts.optmulti(
         "l",
         "listen",
         "specify the port/address to listen on",
@@ -82,12 +84,12 @@ fn parse_options(
         return Err(0);
     }
 
-    let addr = matches
-        .opt_get_default::<SocketAddr>(
-            "l",
-            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 21569),
-        )
-        .unwrap();
+    let addrs = matches.opt_strs("l");
+    let addrs = if addrs.len() > 0 {
+        addrs
+    } else {
+        vec!["127.0.0.1:21569".into(), "[::1]:21569".into()]
+    };
     let num_threads = matches.opt_get_default("n", 1).unwrap();
     let timeout = matches
         .opt_get("timeout")
@@ -97,7 +99,7 @@ fn parse_options(
 
     Ok(TcpProxyOptions {
         lib_path,
-        addr,
+        addrs,
         num_threads,
         timeout,
         limit,
@@ -127,21 +129,35 @@ pub fn run_tcp_proxy(options: GeneralOptions) -> i32 {
         Err(err) => return err,
     };
 
-    let libs = AquesTalkDll::new(&options.lib_path).unwrap();
-    let listener = TcpListener::bind(options.addr).unwrap();
-    let pool = ThreadPool::new(options.num_threads);
+    let aqtk = AquesTalkDll::new(&options.lib_path).unwrap();
+    let pool = Arc::new(Mutex::new(ThreadPool::new(options.num_threads)));
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        let aqtks = libs.clone();
-        let timeout = options.timeout;
-        let limit = options.limit;
+    (options.addrs)
+        .iter()
+        .map(|addr| {
+            let listener = TcpListener::bind(addr).unwrap();
+            let aqtk = aqtk.clone();
+            let timeout = options.timeout;
+            let limit = options.limit;
+            let pool = Arc::clone(&pool);
 
-        pool.execute(move || {
-            handle_connection(stream, aqtks, timeout, limit)
-                .unwrap_or_else(|err| eprintln!("{}", err));
-        });
-    }
+            thread::spawn(move || {
+                for stream in listener.incoming() {
+                    let stream = stream.unwrap();
+                    let aqtk = aqtk.clone();
+                    let timeout = timeout;
+                    let limit = limit;
+
+                    pool.lock().unwrap().execute(move || {
+                        handle_connection(stream, aqtk, timeout, limit)
+                            .unwrap_or_else(|err| eprintln!("{}", err));
+                    });
+                }
+            })
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .for_each(|t| t.join().unwrap());
 
     0
 }
