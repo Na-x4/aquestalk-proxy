@@ -48,6 +48,7 @@ where
     W: Write,
 {
     serde_json::to_writer(&mut writer, &Response::new(status, payload, request))?;
+    writer.write(b"\n")?;
     writer.flush()?;
     Ok(())
 }
@@ -106,9 +107,10 @@ where
 
 #[cfg(test)]
 mod test {
-    use serde_json::{json, Value};
+    use std::str;
 
-    use crate::aquestalk::AquesTalkDll;
+    use aquestalk_proxyd::aquestalk::AquesTalkDll;
+    use serde_json::{json, Value};
 
     use super::proxy;
 
@@ -119,12 +121,12 @@ mod test {
         let mut output = Vec::new();
 
         proxy(input, &mut output, aqtk, None).unwrap();
-        let mut response: Value =
-            serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let mut response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
         if response["response"]["wav"].is_string() {
             response["response"]["wav"] = json!("===WAV DATA===");
         }
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -144,8 +146,9 @@ mod test {
         let mut output = Vec::new();
 
         proxy(input, &mut output, aqtk, Some(37)).unwrap();
-        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -168,8 +171,9 @@ mod test {
         let mut output = Vec::new();
 
         proxy(input, &mut output, aqtk, None).unwrap();
-        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -192,8 +196,9 @@ mod test {
         let mut output = Vec::new();
 
         proxy(input, &mut output, aqtk, None).unwrap();
-        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -216,8 +221,9 @@ mod test {
         let mut output = Vec::new();
 
         proxy(input, &mut output, aqtk, None).unwrap();
-        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(
@@ -240,8 +246,9 @@ mod test {
         let mut output = Vec::new();
 
         proxy(input, &mut output, aqtk, None).unwrap();
-        let response: Value = serde_json::from_str(&String::from_utf8(output).unwrap()).unwrap();
+        let response: Value = serde_json::from_str(str::from_utf8(&output).unwrap()).unwrap();
 
+        assert_eq!(output.iter().filter(|&&c| c == b'\n').count(), 1);
         assert_eq!(
             response,
             json!(

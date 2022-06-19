@@ -20,9 +20,10 @@ use std::{
     path::PathBuf,
 };
 
+use aquestalk_proxyd::aquestalk::AquesTalkDll;
 use getopts::Options;
 
-use crate::{aquestalk::AquesTalkDll, GeneralOptions};
+use crate::GeneralOptions;
 
 use super::proxy;
 
@@ -52,7 +53,7 @@ fn parse_options(
         args,
         lib_path,
     }: GeneralOptions,
-) -> Option<StdioProxyOptions> {
+) -> Result<StdioProxyOptions, i32> {
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
 
@@ -60,25 +61,26 @@ fn parse_options(
         Ok(m) => m,
         Err(f) => {
             eprintln!("{}\nERROR: {}", format_usage(&program, opts), f.to_string());
-            return None;
+            return Err(1);
         }
     };
 
     if matches.opt_present("h") {
         println!("{}", format_usage(&program, opts));
-        return None;
+        return Err(0);
     }
 
-    Some(StdioProxyOptions { lib_path })
+    Ok(StdioProxyOptions { lib_path })
 }
 
-pub fn run_stdio_proxy(options: GeneralOptions) {
+pub fn run_stdio_proxy(options: GeneralOptions) -> i32 {
     let options = match parse_options(options) {
-        Some(options) => options,
-        None => return,
+        Ok(options) => options,
+        Err(err) => return err,
     };
 
     let aqtk = AquesTalkDll::new(&options.lib_path).unwrap();
-
     proxy(stdin().lock(), stdout().lock(), aqtk, None).unwrap();
+
+    0
 }

@@ -28,9 +28,12 @@ mod test {
         let (koe, _, had_errors) = SHIFT_JIS.encode(koe);
         assert!(!had_errors);
         let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
-        let f1 = aqtk.0.get("f1").unwrap();
 
-        unsafe { f1.synthe_raw(&CString::new(koe).unwrap(), 100) }
+        match unsafe { aqtk.synthe_raw("f1", &CString::new(koe).unwrap(), 100) } {
+            Some(Ok(wav)) => Ok(wav),
+            Some(Err(err)) => Err(err),
+            None => unreachable!(),
+        }
     }
 
     #[test]
@@ -45,10 +48,9 @@ mod test {
         let test_str = "🤔";
 
         let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
-        let f1 = aqtk.0.get("f1").unwrap();
-        let aqtk_err = unsafe { f1.synthe_raw(&CString::new(test_str).unwrap(), 100) };
+        let aqtk_err = unsafe { aqtk.synthe_raw("f1", &CString::new(test_str).unwrap(), 100) };
         let koe_err = Koe::from_str(test_str);
-        assert_eq!(aqtk_err.err().unwrap(), koe_err.err().unwrap());
+        assert_eq!(aqtk_err.unwrap().err().unwrap(), koe_err.err().unwrap());
     }
 
     #[test]

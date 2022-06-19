@@ -16,12 +16,11 @@
 // along with AquesTalk-proxy.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::ffi::{CStr, OsStr};
+use std::ffi::CStr;
 use std::fs;
 use std::path::Path;
 use std::slice;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
 
 use aquestalk_proxy::aquestalk::{AquesTalk, Error, Koe};
 use aquestalk_proxy::messages::ResponsePayload;
@@ -39,7 +38,7 @@ fn new_unknown_voice_type_error(voice_type: &str) -> ResponsePayload {
 }
 
 #[derive(Clone)]
-pub struct AquesTalkDll(HashMap<String, AquesTalkDllImpl>);
+pub struct AquesTalkDll(HashMap<String, AquesTalkDllRaw>);
 
 impl AquesTalkDll {
     pub fn new<P>(path: &P) -> Result<Self, Box<dyn std::error::Error>>
@@ -53,68 +52,55 @@ impl AquesTalkDll {
                 let voice_type = entry.file_name().into_string().unwrap();
                 let mut path = entry.path();
                 path.push("AquesTalk.dll");
-                aqtks.insert(voice_type, AquesTalkDllImpl::new(path.into_os_string())?);
+                aqtks.insert(voice_type, AquesTalkDllRaw::new(path.into_os_string())?);
             }
         }
         Ok(Self(aqtks))
+    }
+
+    pub unsafe fn synthe_raw(
+        &self,
+        voice_type: &str,
+        koe: &CStr,
+        speed: i32,
+    ) -> Option<Result<Wav, Error>> {
+        let dll = match self.0.get(&voice_type.to_string()) {
+            Some(dll) => dll,
+            None => return None,
+        };
+
+        let (wav, size) = dll.synthe(koe.as_ptr(), speed);
+
+        if wav.is_null() {
+            return Some(Err(Error::new(size as i32)));
+        }
+
+        Some(Ok(Wav {
+            wav,
+            size,
+            dll: dll.clone(),
+        }))
     }
 }
 
 impl AquesTalk<Wav> for AquesTalkDll {
     fn synthe(&self, voice_type: &str, koe: &str, speed: i32) -> Result<Wav, ResponsePayload> {
-        let dll = match self.0.get(&voice_type.to_string()) {
-            Some(dll) => dll,
-            None => {
-                return Err(new_unknown_voice_type_error(voice_type));
-            }
+        if !self.0.contains_key(voice_type) {
+            return Err(new_unknown_voice_type_error(voice_type));
+        }
+
+        let koe = match Koe::from_str(koe) {
+            Ok(koe) => koe,
+            Err(err) => return Err(ResponsePayload::from(err)),
         };
 
-        let wav = match dll.synthe(&koe.to_string(), speed) {
-            Ok(wav) => wav,
-            Err(err) => {
-                return Err(ResponsePayload::from(err));
-            }
+        let wav = match unsafe { self.synthe_raw(voice_type, &koe, speed) } {
+            Some(Ok(wav)) => wav,
+            Some(Err(err)) => return Err(ResponsePayload::from(err)),
+            None => unreachable!(),
         };
 
         Ok(wav)
-    }
-}
-
-#[derive(Debug, Clone)]
-struct AquesTalkDllImpl(Arc<Mutex<AquesTalkDllRaw>>);
-
-impl AquesTalkDllImpl {
-    fn new<P: AsRef<OsStr>>(filename: P) -> Result<AquesTalkDllImpl, libloading::Error> {
-        let dll = AquesTalkDllRaw::new(filename)?;
-        Ok(AquesTalkDllImpl(Arc::new(Mutex::new(dll))))
-    }
-
-    unsafe fn synthe_raw(&self, koe: &CStr, speed: i32) -> Result<Wav, Error> {
-        let dll = &self.0;
-
-        let (wav, size) = {
-            let mut dll = dll.lock().unwrap();
-            dll.synthe(koe.as_ptr(), speed)
-        };
-
-        if wav.is_null() {
-            return Err(Error::new(size as i32));
-        }
-
-        Ok(Wav {
-            wav,
-            size,
-            dll: Arc::clone(dll),
-        })
-    }
-
-    fn synthe_koe(&self, koe: &Koe, speed: i32) -> Result<Wav, Error> {
-        unsafe { self.synthe_raw(koe, speed) }
-    }
-
-    fn synthe(&self, koe: &str, speed: i32) -> Result<Wav, Error> {
-        let koe = Koe::from_str(koe)?;
-        self.synthe_koe(&koe, speed)
     }
 }
 
@@ -122,7 +108,7 @@ impl AquesTalkDllImpl {
 pub struct Wav {
     wav: *const u8,
     size: usize,
-    dll: Arc<Mutex<AquesTalkDllRaw>>,
+    dll: AquesTalkDllRaw,
 }
 
 impl AsRef<[u8]> for Wav {
@@ -137,9 +123,8 @@ impl AsRef<[u8]> for Wav {
 
 impl Drop for Wav {
     fn drop(&mut self) {
-        let mut dll = self.dll.lock().unwrap();
         unsafe {
-            dll.free_wave(self.wav);
+            self.dll.free_wave(self.wav);
         }
     }
 }
