@@ -29,6 +29,7 @@ $ echo "{\"koe\":\"こんにちわ、せ'かい\"}" | docker run -i --rm --platf
 
 AquesTalk-proxy はシンプルな JSON ストリーミングプロトコルです。
 `Request` メッセージを送信すると、`Result` メッセージで応答します。
+応答は改行 (`\n`, LF) 区切りで 1 行が 1 つのメッセージに対応します。
 
 `Result.willClose` が `true` ではない間、何度でも `Request` メッセージを送信できます。
 リクエストの間に区切り文字は必要ありません。
