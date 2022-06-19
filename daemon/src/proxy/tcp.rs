@@ -28,7 +28,7 @@ use crate::GeneralOptions;
 
 struct TcpProxyOptions {
     lib_path: PathBuf,
-    addr: String,
+    addrs: Vec<String>,
     num_threads: usize,
     timeout: Option<Duration>,
     limit: Option<u64>,
@@ -58,7 +58,7 @@ fn parse_options(
     }: GeneralOptions,
 ) -> Result<TcpProxyOptions, i32> {
     let mut opts = Options::new();
-    opts.optopt(
+    opts.optmulti(
         "l",
         "listen",
         "specify the port/address to listen on",
@@ -82,9 +82,12 @@ fn parse_options(
         return Err(0);
     }
 
-    let addr = matches
-        .opt_get_default("l", "127.0.0.1:21569".into())
-        .unwrap();
+    let addrs = matches.opt_strs("l");
+    let addrs = if addrs.len() > 0 {
+        addrs
+    } else {
+        vec!["127.0.0.1:21569".into(), "[::1]:21569".into()]
+    };
     let num_threads = matches.opt_get_default("n", 1).unwrap();
     let timeout = matches
         .opt_get("timeout")
@@ -94,7 +97,7 @@ fn parse_options(
 
     Ok(TcpProxyOptions {
         lib_path,
-        addr,
+        addrs,
         num_threads,
         timeout,
         limit,
@@ -125,7 +128,7 @@ pub fn run_tcp_proxy(options: GeneralOptions) -> i32 {
     };
 
     let libs = AquesTalkDll::new(&options.lib_path).unwrap();
-    let listener = TcpListener::bind(options.addr).unwrap();
+    let listener = TcpListener::bind(options.addrs[0]).unwrap();
     let pool = ThreadPool::new(options.num_threads);
 
     for stream in listener.incoming() {
