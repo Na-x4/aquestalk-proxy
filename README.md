@@ -80,6 +80,21 @@ interface Result {
 | --------------------- | ---------------------------------------------------------- | ----------------------------------- |
 | `-p`, `--path` `PATH` | AquesTalk ライブラリのあるディレクトリへのパスを指定する。 | `-p カレントディレクトリ/aquestalk` |
 
+AquesTalk ライブラリのディレクトリ構成は以下のようにする
+
+```
+aquestalk
+  +- [声種1]
+  |    +- AqLicense.txt
+  |    +- AquesTalk.dll
+  |    +- AquesTalkDa.dll
+  +- [声種2]
+  |    +- AqLicense.txt
+  |    +- AquesTalk.dll
+  |    +- AquesTalkDa.dll
+  ⋮
+```
+
 ### STDIO Mode
 
 オプションなし
