@@ -18,6 +18,8 @@
 use std::io::BufWriter;
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::Duration;
 
 use aquestalk_proxyd::aquestalk::AquesTalkDll;
@@ -127,21 +129,35 @@ pub fn run_tcp_proxy(options: GeneralOptions) -> i32 {
         Err(err) => return err,
     };
 
-    let libs = AquesTalkDll::new(&options.lib_path).unwrap();
-    let listener = TcpListener::bind(options.addrs[0]).unwrap();
-    let pool = ThreadPool::new(options.num_threads);
+    let aqtk = AquesTalkDll::new(&options.lib_path).unwrap();
+    let pool = Arc::new(Mutex::new(ThreadPool::new(options.num_threads)));
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        let aqtks = libs.clone();
-        let timeout = options.timeout;
-        let limit = options.limit;
+    (options.addrs)
+        .iter()
+        .map(|addr| {
+            let listener = TcpListener::bind(addr).unwrap();
+            let aqtk = aqtk.clone();
+            let timeout = options.timeout;
+            let limit = options.limit;
+            let pool = Arc::clone(&pool);
 
-        pool.execute(move || {
-            handle_connection(stream, aqtks, timeout, limit)
-                .unwrap_or_else(|err| eprintln!("{}", err));
-        });
-    }
+            thread::spawn(move || {
+                for stream in listener.incoming() {
+                    let stream = stream.unwrap();
+                    let aqtk = aqtk.clone();
+                    let timeout = timeout;
+                    let limit = limit;
+
+                    pool.lock().unwrap().execute(move || {
+                        handle_connection(stream, aqtk, timeout, limit)
+                            .unwrap_or_else(|err| eprintln!("{}", err));
+                    });
+                }
+            })
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .for_each(|t| t.join().unwrap());
 
     0
 }
