@@ -89,6 +89,20 @@ impl From<&'_ [u8]> for ResponsePayload {
     }
 }
 
+impl TryFrom<ResponsePayload> for Vec<u8> {
+    type Error = ResponsePayload;
+    fn try_from(value: ResponsePayload) -> Result<Self, Self::Error> {
+        match value {
+            ResponsePayload::Wav { wav } => {
+                base64::decode(wav).map_err(|e| ResponsePayload::IoError {
+                    message: e.to_string(),
+                })
+            }
+            value => Err(value),
+        }
+    }
+}
+
 impl From<crate::aquestalk::Error> for ResponsePayload {
     fn from(err: crate::aquestalk::Error) -> Self {
         Self::AquestalkError {
