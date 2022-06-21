@@ -53,7 +53,7 @@ where
     Ok(())
 }
 
-fn proxy<R, W, A, O>(
+fn proxy<R, W, A>(
     reader: R,
     mut writer: W,
     aqtk: A,
@@ -62,8 +62,7 @@ fn proxy<R, W, A, O>(
 where
     R: Read,
     W: Write,
-    A: AquesTalk<O>,
-    O: AsRef<[u8]>,
+    A: AquesTalk,
 {
     let mut reader = reader.take_optional(limit);
 

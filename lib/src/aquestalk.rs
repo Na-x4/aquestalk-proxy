@@ -13,11 +13,10 @@ pub use koe::Koe;
 
 use crate::messages::ResponsePayload;
 
-pub trait AquesTalk<T>
-where
-    T: AsRef<[u8]>,
-{
-    fn synthe(&self, voice_type: &str, koe: &str, speed: i32) -> Result<T, ResponsePayload>;
+pub trait AquesTalk {
+    type Wav: AsRef<[u8]>;
+    fn synthe(&self, voice_type: &str, koe: &str, speed: i32)
+        -> Result<Self::Wav, ResponsePayload>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

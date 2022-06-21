@@ -83,7 +83,8 @@ impl AquesTalkDll {
     }
 }
 
-impl AquesTalk<Wav> for AquesTalkDll {
+impl AquesTalk for AquesTalkDll {
+    type Wav = Wav;
     fn synthe(&self, voice_type: &str, koe: &str, speed: i32) -> Result<Wav, ResponsePayload> {
         if !self.0.contains_key(voice_type) {
             return Err(new_unknown_voice_type_error(voice_type));
