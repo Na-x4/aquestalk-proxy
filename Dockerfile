@@ -40,7 +40,7 @@ USER user
 WORKDIR /home/user
 COPY --chown=user:user / /home/user/aquestalk-proxy
 RUN cd aquestalk-proxy \
-  && cargo build --release \
+  && cargo build --release --target i686-pc-windows-gnu \
   && mkdir app && cd app \
   && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxyd.exe ./aquestalk-proxy.exe \
   && ../scripts/extract-aqtk.sh \
@@ -52,5 +52,5 @@ COPY --from=builder --chown=root:root /home/user/aquestalk-proxy/app /app
 
 USER user
 EXPOSE 21569
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/wine", "/app/aquestalk-proxy.exe"]
-CMD ["--path=/app/aquestalk"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/wine", "/app/aquestalk-proxy.exe", "--path=/app/aquestalk"]
+CMD ["stdio"]
