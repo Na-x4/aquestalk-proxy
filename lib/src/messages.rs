@@ -6,6 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::fmt::Display;
 use std::io;
 
 use serde::{Deserialize, Serialize};
@@ -81,6 +82,17 @@ pub enum ResponsePayload {
     },
 }
 
+impl ResponsePayload {
+    pub fn from_io_error<E>(err: E) -> Self
+    where
+        E: Display,
+    {
+        Self::IoError {
+            message: err.to_string(),
+        }
+    }
+}
+
 impl From<&'_ [u8]> for ResponsePayload {
     fn from(wav: &'_ [u8]) -> Self {
         Self::Wav {
@@ -94,9 +106,7 @@ impl TryFrom<ResponsePayload> for Vec<u8> {
     fn try_from(value: ResponsePayload) -> Result<Self, Self::Error> {
         match value {
             ResponsePayload::Wav { wav } => {
-                base64::decode(wav).map_err(|e| ResponsePayload::IoError {
-                    message: e.to_string(),
-                })
+                base64::decode(wav).map_err(ResponsePayload::from_io_error)
             }
             value => Err(value),
         }
@@ -120,9 +130,7 @@ impl From<serde_json::Error> for ResponsePayload {
             }
         } else {
             let err: io::Error = err.into();
-            Self::IoError {
-                message: err.to_string(),
-            }
+            Self::from_io_error(err)
         }
     }
 }
