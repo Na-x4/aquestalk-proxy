@@ -10,3 +10,4 @@ pub mod aquestalk;
 pub mod messages;
 
 mod proxy;
+pub use proxy::AquesTalkProxyClient;
