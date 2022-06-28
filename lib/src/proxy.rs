@@ -10,6 +10,8 @@ use std::io::{BufRead, Write};
 
 use crate::messages::{Request, Response, ResponsePayload};
 
+pub mod stdio;
+
 pub struct AquesTalkProxyClient<R, W>
 where
     R: BufRead,
