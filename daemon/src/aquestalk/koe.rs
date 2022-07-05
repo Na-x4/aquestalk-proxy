@@ -24,10 +24,12 @@ mod test {
 
     use crate::aquestalk::{AquesTalkDll, Error as AquesTalkError, Wav};
 
+    const PATH: &str = "./aquestalk";
+
     fn aqtk_synthe(koe: &str) -> Result<Wav, AquesTalkError> {
         let (koe, _, had_errors) = SHIFT_JIS.encode(koe);
         assert!(!had_errors);
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
 
         match unsafe { aqtk.synthe_raw("f1", &CString::new(koe).unwrap(), 100) } {
             Some(Ok(wav)) => Ok(wav),
@@ -49,7 +51,7 @@ mod test {
     fn test_koe_non_shiftjis_char() {
         let test_str = "🤔";
 
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let aqtk_err = unsafe { aqtk.synthe_raw("f1", &CString::new(test_str).unwrap(), 100) };
         let koe_err = Koe::from_str(test_str);
         assert_eq!(aqtk_err.unwrap().err().unwrap(), koe_err.err().unwrap());

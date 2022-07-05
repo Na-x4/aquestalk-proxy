@@ -113,10 +113,12 @@ mod test {
 
     use super::proxy;
 
+    const PATH: &str = "./aquestalk";
+
     #[test]
     #[cfg_attr(not(windows), ignore)]
     fn test_success() {
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
@@ -142,7 +144,7 @@ mod test {
     #[test]
     #[cfg_attr(not(windows), ignore)]
     fn test_reach_limit() {
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
@@ -168,7 +170,7 @@ mod test {
     #[test]
     #[cfg_attr(not(windows), ignore)]
     fn test_json_error() {
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"".as_bytes();
         let mut output = Vec::new();
 
@@ -194,7 +196,7 @@ mod test {
     #[test]
     #[cfg_attr(not(windows), ignore)]
     fn test_json_recoverable_error() {
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koee\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
@@ -220,7 +222,7 @@ mod test {
     #[test]
     #[cfg_attr(not(windows), ignore)]
     fn test_invalid_voice_type() {
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"type\":\"invalid type\",\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
         let mut output = Vec::new();
 
@@ -246,7 +248,7 @@ mod test {
     #[test]
     #[cfg_attr(not(windows), ignore)]
     fn test_aqtk_error() {
-        let aqtk = AquesTalkDll::new(&"./aquestalk").unwrap();
+        let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"🤔\"}".as_bytes();
         let mut output = Vec::new();
 
