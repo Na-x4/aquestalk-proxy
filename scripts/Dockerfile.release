@@ -49,5 +49,5 @@ COPY --from=downloader --chown=root:root /aquestalk-proxy /app
 
 USER user
 EXPOSE 21569
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/wine", "/app/aquestalk-proxy.exe"]
-CMD ["--path=/app/aquestalk", "--listen=0.0.0.0:21569"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/wine", "/app/aquestalk-proxy.exe", "--path=/app/aquestalk"]
+CMD ["stdio"]
