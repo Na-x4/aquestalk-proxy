@@ -24,7 +24,7 @@ mod test {
 
     use crate::aquestalk::{AquesTalkDll, Error as AquesTalkError, Wav};
 
-    const PATH: &str = "./aquestalk";
+    const PATH: &str = "../aquestalk";
 
     fn aqtk_synthe(koe: &str) -> Result<Wav, AquesTalkError> {
         let (koe, _, had_errors) = SHIFT_JIS.encode(koe);

@@ -113,7 +113,7 @@ mod test {
 
     use super::proxy;
 
-    const PATH: &str = "./aquestalk";
+    const PATH: &str = "../aquestalk";
 
     #[test]
     #[cfg_attr(not(windows), ignore)]
