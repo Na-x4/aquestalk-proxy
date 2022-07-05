@@ -114,7 +114,10 @@ aquestalk
 $ cargo install cross
 $ git clone https://github.com/Na-x4/aquestalk-proxy.git
 $ cd aquestalk-proxy
-$ cross test --target=i686-pc-windows-gnu
+$ ./scripts/extract-aqtk.sh
+$ cross build --target=i686-pc-windows-gnu --release
+$ cargo test
+$ cross test --target=i686-pc-windows-gnu -- --skip=docker
 ```
 
 ## Licence
