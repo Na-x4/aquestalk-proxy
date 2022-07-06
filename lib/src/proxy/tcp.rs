@@ -45,3 +45,19 @@ where
         client.synthe(voice_type, koe, speed)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::env;
+
+    use crate::aquestalk::AquesTalk;
+    use crate::AquesTalkProxyTcp;
+
+    #[test]
+    fn tcp() {
+        let aqtk =
+            AquesTalkProxyTcp::new(env::var("AQTK_PROXY").unwrap_or("localhost:21569".into()));
+        aqtk.synthe("f1", "こんにちわ、せ'かい", 100).unwrap();
+        aqtk.synthe("f1", "ゆっくりしていってね", 100).unwrap();
+    }
+}
