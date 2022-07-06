@@ -11,4 +11,5 @@ pub mod messages;
 
 mod proxy;
 pub use proxy::stdio::AquesTalkProxyStdio;
+pub use proxy::tcp::AquesTalkProxyTcp;
 pub use proxy::AquesTalkProxyClient;
