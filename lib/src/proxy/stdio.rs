@@ -8,22 +8,20 @@
 
 use std::ffi::OsStr;
 use std::io::{self, BufReader};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio as StdioEnum};
 use std::sync::{Arc, Mutex};
 
 use crate::aquestalk::AquesTalk;
 use crate::messages::ResponsePayload;
 
-use super::AquesTalkProxyClient;
+type Client = super::Client<BufReader<ChildStdout>, ChildStdin>;
 
-type Client = AquesTalkProxyClient<BufReader<ChildStdout>, ChildStdin>;
-
-struct AquesTalkProxyStdioImpl {
+struct StdioClientImpl {
     command: Child,
     client: Client,
 }
 
-impl AquesTalkProxyStdioImpl {
+impl StdioClientImpl {
     fn has_exited(&mut self) -> bool {
         match self.command.try_wait() {
             Ok(None) => (),
@@ -38,13 +36,13 @@ impl AquesTalkProxyStdioImpl {
     }
 }
 
-pub struct AquesTalkProxyStdio<S, F> {
+pub struct StdioClient<S, F> {
     program: S,
     opener: F,
-    inner: Arc<Mutex<Option<AquesTalkProxyStdioImpl>>>,
+    inner: Arc<Mutex<Option<StdioClientImpl>>>,
 }
 
-impl<S, F> AquesTalkProxyStdio<S, F>
+impl<S, F> StdioClient<S, F>
 where
     S: AsRef<OsStr>,
     F: Fn(&mut Command) -> &mut Command,
@@ -57,21 +55,21 @@ where
         }
     }
 
-    fn open(&self) -> io::Result<AquesTalkProxyStdioImpl> {
+    fn open(&self) -> io::Result<StdioClientImpl> {
         let mut command = (self.opener)(&mut Command::new(&self.program))
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
+            .stdin(StdioEnum::piped())
+            .stdout(StdioEnum::piped())
             .spawn()?;
         let reader = BufReader::new(command.stdout.take().unwrap());
         let writer = command.stdin.take().unwrap();
 
-        let client = AquesTalkProxyClient::new(reader, writer);
+        let client = Client::new(reader, writer);
 
-        Ok(AquesTalkProxyStdioImpl { command, client })
+        Ok(StdioClientImpl { command, client })
     }
 }
 
-impl<S, F> AquesTalk for AquesTalkProxyStdio<S, F>
+impl<S, F> AquesTalk for StdioClient<S, F>
 where
     S: AsRef<OsStr>,
     F: Fn(&mut Command) -> &mut Command,
@@ -101,7 +99,7 @@ mod test {
     use std::path::Path;
 
     use crate::aquestalk::AquesTalk;
-    use crate::AquesTalkProxyStdio;
+    use crate::StdioClient;
 
     #[cfg_attr(not(windows), ignore)]
     #[test]
@@ -115,15 +113,14 @@ mod test {
             panic!("{:?}", err);
         }
 
-        let aqtk =
-            AquesTalkProxyStdio::new(&exe_path, |c| c.arg("--path=../aquestalk").arg("stdio"));
+        let aqtk = StdioClient::new(&exe_path, |c| c.arg("--path=../aquestalk").arg("stdio"));
         aqtk.synthe("f1", "こんにちわ、せ'かい", 100).unwrap();
         aqtk.synthe("f1", "ゆっくりしていってね", 100).unwrap();
     }
 
     #[test]
     fn docker_container() {
-        let aqtk = AquesTalkProxyStdio::new("docker", |c| {
+        let aqtk = StdioClient::new("docker", |c| {
             c.arg("run")
                 .arg("-i")
                 .arg("--rm")

@@ -10,10 +10,10 @@ use std::io::{BufRead, Write};
 
 use crate::messages::{Request, Response, ResponsePayload};
 
-pub mod stdio;
-pub mod tcp;
+pub(crate) mod stdio;
+pub(crate) mod tcp;
 
-pub struct AquesTalkProxyClient<R, W>
+pub struct Client<R, W>
 where
     R: BufRead,
     W: Write,
@@ -22,13 +22,13 @@ where
     writer: Option<W>,
 }
 
-impl<R, W> AquesTalkProxyClient<R, W>
+impl<R, W> Client<R, W>
 where
     R: BufRead,
     W: Write,
 {
     pub fn new(reader: R, writer: W) -> Self {
-        AquesTalkProxyClient {
+        Client {
             reader,
             writer: Some(writer),
         }

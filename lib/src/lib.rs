@@ -9,7 +9,6 @@
 pub mod aquestalk;
 pub mod messages;
 
-mod proxy;
-pub use proxy::stdio::AquesTalkProxyStdio;
-pub use proxy::tcp::AquesTalkProxyTcp;
-pub use proxy::AquesTalkProxyClient;
+pub mod proxy;
+pub use proxy::stdio::StdioClient;
+pub use proxy::tcp::TcpClient;

@@ -12,15 +12,13 @@ use std::net::{TcpStream, ToSocketAddrs};
 use crate::aquestalk::AquesTalk;
 use crate::messages::ResponsePayload;
 
-use super::AquesTalkProxyClient;
+type Client<'a> = super::Client<BufReader<&'a TcpStream>, &'a TcpStream>;
 
-type Client<'a> = AquesTalkProxyClient<BufReader<&'a TcpStream>, &'a TcpStream>;
-
-pub struct AquesTalkProxyTcp<A> {
+pub struct TcpClient<A> {
     addr: A,
 }
 
-impl<A> AquesTalkProxyTcp<A>
+impl<A> TcpClient<A>
 where
     A: ToSocketAddrs,
 {
@@ -29,7 +27,7 @@ where
     }
 }
 
-impl<A> AquesTalk for AquesTalkProxyTcp<A>
+impl<A> AquesTalk for TcpClient<A>
 where
     A: ToSocketAddrs,
 {
@@ -51,12 +49,11 @@ mod test {
     use std::env;
 
     use crate::aquestalk::AquesTalk;
-    use crate::AquesTalkProxyTcp;
+    use crate::TcpClient;
 
     #[test]
     fn tcp() {
-        let aqtk =
-            AquesTalkProxyTcp::new(env::var("AQTK_PROXY").unwrap_or("localhost:21569".into()));
+        let aqtk = TcpClient::new(env::var("AQTK_PROXY").unwrap_or("localhost:21569".into()));
         aqtk.synthe("f1", "こんにちわ、せ'かい", 100).unwrap();
         aqtk.synthe("f1", "ゆっくりしていってね", 100).unwrap();
     }
