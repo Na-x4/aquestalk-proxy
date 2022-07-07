@@ -28,13 +28,13 @@ $ echo "{\"koe\":\"こんにちわ、せ'かい\"}" | docker run -i --rm --platf
 ## Protocol
 
 AquesTalk-proxy はシンプルな JSON ストリーミングプロトコルです。
-`Request` メッセージを送信すると、`Result` メッセージで応答します。
+`Request` メッセージを送信すると、`Response` メッセージで応答します。
 応答は改行 (`\n`, LF) 区切りで 1 行が 1 つのメッセージに対応します。
 
-`Result.willClose` が `true` ではない間、何度でも `Request` メッセージを送信できます。
+`Response.willClose` が `true` ではない間、何度でも `Request` メッセージを送信できます。
 リクエストの間に区切り文字は必要ありません。
 
-`Result.willClose` が `true` を返した場合は回復不能なエラーが発生しています。
+`Response.willClose` が `true` を返した場合は回復不能なエラーが発生しています。
 TCP モードの場合はサーバー側の接続がクローズするため、再接続が必要になります。
 標準入出力モードの場合にはプロセスが終了します。再度実行してください。
 
@@ -49,7 +49,7 @@ interface Request {
   speed?: number; // 発話速度[%] 50-300 の間で指定 デフォルト: 100 値を大きく設定するほど、速くなる
 }
 
-interface Result {
+interface Response {
   isSuccess: boolean; // true -> リクエストの結果が成功
   willClose?: boolean; // true -> 続けて新たなリクエストを受付不可
   response:
