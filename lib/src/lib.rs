@@ -8,3 +8,7 @@
 
 pub mod aquestalk;
 pub mod messages;
+
+pub mod proxy;
+pub use proxy::stdio::StdioClient;
+pub use proxy::tcp::TcpClient;
