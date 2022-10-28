@@ -29,7 +29,7 @@ $ echo "{\"koe\":\"こんにちわ、せ'かい\"}" | docker run -i --rm --platf
 
 AquesTalk-proxy はシンプルな JSON ストリーミングプロトコルです。
 `Request` メッセージを送信すると、`Response` メッセージで応答します。
-応答は改行 (`\n`, LF) 区切りで 1 行が 1 つのメッセージに対応します。
+応答は改行 (`\n`: LF) 区切りで 1 行が 1 つのメッセージに対応します。
 
 `Response.willClose` が `true` ではない間、何度でも `Request` メッセージを送信できます。
 リクエストの間に区切り文字は必要ありません。
@@ -83,12 +83,12 @@ interface Response {
 AquesTalk ライブラリのディレクトリ構成は以下のようにする
 
 ```
-aquestalk
-  +- [声種1]
+aquestalk/
+  +- [声種1]/
   |    +- AqLicense.txt
   |    +- AquesTalk.dll
   |    +- AquesTalkDa.dll
-  +- [声種2]
+  +- [声種2]/
   |    +- AqLicense.txt
   |    +- AquesTalk.dll
   |    +- AquesTalkDa.dll
@@ -122,14 +122,14 @@ $ cross test --target=i686-pc-windows-gnu -- --skip=docker
 
 ## Licence
 
-- `lib` ディレクトリ以下のソースコードは MIT license と the Apache License (Version 2.0) のデュアルライセンスの下で頒布されています。
-- それ以外のソースコードは GNU Affero General Public License の下で頒布されています。
+`lib` ディレクトリ以下のソースコードは MIT license と Apache License (Version 2.0) のデュアルライセンスの下で頒布されています。
+それ以外のソースコードは GNU Affero General Public License の下で頒布されています。
 
-- 本プログラムは、株式会社アクエストの規則音声合成ライブラリ「AquesTalk」を使用しています。
-  - `aquestalk` ディレクトリ以下のファイル、及び `aqtk_mv_20090609.zip` ファイルの著作権は同社に帰属します。
-  - 詳細は `AqLicense.txt` をご覧ください。
+本プログラムは、株式会社アクエストの規則音声合成ライブラリ「AquesTalk」を使用しています。
+`aquestalk` ディレクトリ以下のファイル、及び `aqtk_mv_20090609.zip` ファイルの著作権は同社に帰属します。
+詳細は `AqLicense.txt` をご覧ください。
 
-- `aquestalk-proxyd` で使用している OSS は以下の通りです。
+`aquestalk-proxyd` で使用している OSS は以下の通りです。
 
 | Name                                                                      | License                   | Author(s)                                                                                                                                                                   |
 | ------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
