@@ -17,14 +17,6 @@ AquesTalk のライセンス変更については[公式ブログ][blog.a-quest]
 {"isSuccess":true,"response":{"type":"Wav","wav":"UklGRoxd...AA=="},"request":{"koe":"こんにちわ、せ'かい"}}
 ```
 
-### Docker
-
-```
-$ docker pull nax4/aquestalk-proxy
-$ echo "{\"koe\":\"こんにちわ、せ'かい\"}" | docker run -i --rm --platform=linux/386 nax4/aquestalk-proxy
-{"isSuccess":true,"response":{"type":"Wav","wav":"UklGRoxd...AA=="},"request":{"koe":"こんにちわ、せ'かい"}}
-```
-
 ## Protocol
 
 AquesTalk-proxy はシンプルな JSON ストリーミングプロトコルです。
@@ -110,14 +102,15 @@ aquestalk/
 
 ## Develop
 
+`i686-pc-windows-gnu` をターゲットとしてビルドできるように Rust をセットアップする。
+
 ```
-$ cargo install cross
 $ git clone https://github.com/Na-x4/aquestalk-proxy.git
 $ cd aquestalk-proxy
 $ ./scripts/extract-aqtk.sh
-$ cross build --target=i686-pc-windows-gnu --release
+$ cp aquestalk daemon/aquestalk
+$ cargo build --release
 $ cargo test
-$ cross test --target=i686-pc-windows-gnu -- --skip=docker
 ```
 
 ## Licence
