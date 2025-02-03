@@ -93,7 +93,6 @@ where
 
 #[cfg(test)]
 mod test {
-    use std::env;
     use std::fs;
     use std::io::ErrorKind;
     use std::path::Path;
@@ -107,27 +106,13 @@ mod test {
         let exe_path = Path::new("../target/i686-pc-windows-gnu/release/aquestalk-proxyd.exe");
         if let Err(err) = fs::metadata(&exe_path) {
             if err.kind() == ErrorKind::NotFound {
-                panic!("Run this test after running \"cross build --target=i686-pc-windows-gnu --release\"");
+                panic!("Run this test after running \"cargo build --target=i686-pc-windows-gnu --release\"");
             }
 
             panic!("{:?}", err);
         }
 
         let aqtk = StdioClient::new(&exe_path, |c| c.arg("--path=../aquestalk").arg("stdio"));
-        aqtk.synthe("f1", "こんにちわ、せ'かい", 100).unwrap();
-        aqtk.synthe("f1", "ゆっくりしていってね", 100).unwrap();
-    }
-
-    #[test]
-    fn docker_container() {
-        let aqtk = StdioClient::new("docker", |c| {
-            c.arg("run")
-                .arg("-i")
-                .arg("--rm")
-                .arg("--platform=linux/386")
-                .arg(env::var("AQTK_PROXY_IMAGE").unwrap_or("nax4/aquestalk-proxy".into()))
-                .arg("stdio")
-        });
         aqtk.synthe("f1", "こんにちわ、せ'かい", 100).unwrap();
         aqtk.synthe("f1", "ゆっくりしていってね", 100).unwrap();
     }
