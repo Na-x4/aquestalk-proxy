@@ -39,7 +39,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_koe_space() {
         let aqtk_err = aqtk_synthe("　");
         let koe_err = Koe::from_str(" ");
@@ -47,7 +47,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_koe_non_shiftjis_char() {
         let test_str = "🤔";
 
@@ -58,7 +58,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_koe_long_accent_phrase() {
         let test_str = "あ".repeat(256);
 

@@ -108,9 +108,8 @@ aquestalk/
 $ git clone https://github.com/Na-x4/aquestalk-proxy.git
 $ cd aquestalk-proxy
 $ ./scripts/extract-aqtk.sh
-$ cp aquestalk daemon/aquestalk
-$ cargo build --release
-$ cargo test
+$ cargo run --target=i686-pc-windows-gnu -p aquestalk-proxyd --release -- tcp &
+$ cargo test --target=i686-pc-windows-gnu
 ```
 
 ## Licence

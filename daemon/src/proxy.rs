@@ -116,7 +116,7 @@ mod test {
     const PATH: &str = "../aquestalk";
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_success() {
         let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
@@ -142,7 +142,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_reach_limit() {
         let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
@@ -168,7 +168,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_json_error() {
         let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"こんにちわ、せ'かい\"".as_bytes();
@@ -194,7 +194,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_json_recoverable_error() {
         let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koee\":\"こんにちわ、せ'かい\"}".as_bytes();
@@ -220,7 +220,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_invalid_voice_type() {
         let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"type\":\"invalid type\",\"koe\":\"こんにちわ、せ'かい\"}".as_bytes();
@@ -246,7 +246,7 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(not(windows), ignore)]
+    #[cfg_attr(not(all(windows, target_arch = "x86")), ignore)]
     fn test_aqtk_error() {
         let aqtk = AquesTalkDll::new(&PATH).unwrap();
         let input = "{\"koe\":\"🤔\"}".as_bytes();
