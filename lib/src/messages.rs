@@ -9,6 +9,7 @@
 use std::fmt::Display;
 use std::io;
 
+use base64::prelude::{Engine, BASE64_STANDARD};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -96,7 +97,7 @@ impl ResponsePayload {
 impl From<&'_ [u8]> for ResponsePayload {
     fn from(wav: &'_ [u8]) -> Self {
         Self::Wav {
-            wav: base64::encode(wav),
+            wav: BASE64_STANDARD.encode(wav),
         }
     }
 }
@@ -105,9 +106,9 @@ impl TryFrom<ResponsePayload> for Vec<u8> {
     type Error = ResponsePayload;
     fn try_from(value: ResponsePayload) -> Result<Self, Self::Error> {
         match value {
-            ResponsePayload::Wav { wav } => {
-                base64::decode(wav).map_err(ResponsePayload::from_io_error)
-            }
+            ResponsePayload::Wav { wav } => BASE64_STANDARD
+                .decode(wav)
+                .map_err(ResponsePayload::from_io_error),
             value => Err(value),
         }
     }
