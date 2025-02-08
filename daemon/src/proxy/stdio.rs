@@ -34,7 +34,7 @@ struct StdioProxyOptions {
 fn format_usage(program: &str, opts: Options) -> String {
     format!(
         "\
-AquesTalk-proxy Standard IO mode
+AquesTalk-proxy Standard IO Mode
 
 USAGE:
     {} stdio [OPTIONS]
@@ -55,7 +55,7 @@ fn parse_options(
     }: GeneralOptions,
 ) -> Result<StdioProxyOptions, i32> {
     let mut opts = Options::new();
-    opts.optflag("h", "help", "print this help menu");
+    opts.optflag("h", "help", "Print help");
 
     let matches = match opts.parse(args) {
         Ok(m) => m,

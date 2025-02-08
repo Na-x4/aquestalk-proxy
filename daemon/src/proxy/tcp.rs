@@ -39,7 +39,7 @@ struct TcpProxyOptions {
 fn format_usage(program: &str, opts: Options) -> String {
     format!(
         "\
-AquesTalk-proxy TCP Socket mode
+AquesTalk-proxy TCP Socket Mode
 
 USAGE:
     {} tcp [OPTIONS]
@@ -63,23 +63,23 @@ fn parse_options(
     opts.optmulti(
         "l",
         "listen",
-        "specify the port/address to listen on",
+        "Address and port to listen on (multiple allowed)",
         "ADDR",
     );
-    opts.optopt("n", "threads", "number of threads", "NUM");
+    opts.optopt("n", "threads", "Number of threads for handling requests", "NUM");
     opts.optopt(
         "",
         "timeout",
-        "time until the connection times out",
+        "Connection timeout in milliseconds",
         "MILLIS",
     );
     opts.optopt(
         "",
         "limit",
-        "number of bytes to accept in a request",
+        "Max total request size per session",
         "BYTES",
     );
-    opts.optflag("h", "help", "print this help menu");
+    opts.optflag("h", "help", "Print help");
 
     let matches = match opts.parse(args) {
         Ok(m) => m,

@@ -41,8 +41,8 @@ OPTIONS:
 {}
 
 MODE:
-    tcp                 TCP Socket mode
-    stdio               Standard IO mode (Default)
+    tcp                 TCP Socket Mode
+    stdio               Standard IO Mode (Default)
 ",
         program,
         opts.usage_with_format(|opts| { opts.collect::<Vec<String>>().join("\n") })
@@ -59,8 +59,8 @@ fn run() -> i32 {
 
     let mut opts = Options::new();
     opts.parsing_style(ParsingStyle::StopAtFirstFree);
-    opts.optopt("p", "path", "path to AquesTalk library", "PATH");
-    opts.optflag("h", "help", "print this help menu");
+    opts.optopt("p", "path", "Path to AquesTalk library", "PATH");
+    opts.optflag("h", "help", "Print help");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
