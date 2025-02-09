@@ -8,25 +8,22 @@ name: Release
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     env:
-      CARGO_TERM_COLOR: always
-      cross-version: 0.2.1
-      cross-docker-image: rustembedded/cross:i686-pc-windows-gnu
+      cross-version: 0.2.5
+      cross-docker-image: rustembedded/cross@sha256:3ec96578f30fe9c70214d4e3ad784be2722d1db453555b03501f483ff8a9aac4
     outputs:
       version: ${{ steps.version.outputs.CARGO_PKG_VERSION }}
 
     steps:
-      - uses: actions/checkout@v2
-      - run: ./extract-aqtk.sh
+      - uses: actions/checkout@v4
+      - run: ./scripts/extract-aqtk.sh
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: i686-pc-windows-gnu
       - name: Cache Cross
         id: cache-cross
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/cross
           key: ${{ runner.os }}-cross-${{ env.cross-version }}-${{ env.cross-docker-image }}
@@ -34,7 +31,7 @@ jobs:
         if: steps.cache-cross.outputs.cache-hit != 'true'
         run: |
           mkdir ~/cross \
-          && cargo install --version=${{ env.cross-version }} cross \
+          && cargo --color=always install cross@${{ env.cross-version }} \
           && cp ~/.cargo/bin/cross ~/cross/ \
           && docker pull ${{ env.cross-docker-image }} \
           && docker save -o ~/cross/image.tar ${{ env.cross-docker-image }} \
@@ -45,23 +42,25 @@ jobs:
           && docker load -i ~/cross/image.tar
 
       - name: Build
-        run: cross build --color=always --target i686-pc-windows-gnu --release
+        run: |
+          echo -e "[target.i686-pc-windows-gnu]\nimage = \"${{ env.cross-docker-image }}\"" > Cross.toml \
+          && cross build --color=always --target i686-pc-windows-gnu --release
 
       - name: Get version
         id: version
         run: |
-          cargo metadata --format-version=1 --no-deps \
-          | jq -r '"::set-output name=CARGO_PKG_VERSION::" + .packages[].version'
+          cargo --color=always metadata --format-version=1 --no-deps \
+          | jq -r '"CARGO_PKG_VERSION=" + .packages[].version' >> $GITHUB_OUTPUT
       - name: Package
         run: |
           mkdir release && cd release \
-          && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxy.exe ./aquestalk-proxy.exe \
+          && mv ../target/i686-pc-windows-gnu/release/aquestalk-proxyd.exe ./aquestalk-proxy.exe \
           && mv ../aquestalk ./aquestalk \
           && cp ../README.md ./ \
           && cp ../COPYING ./ \
           && zip -r ../aquestalk-proxy_v${{ steps.version.outputs.CARGO_PKG_VERSION }}.zip *
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.CARGO_PKG_VERSION }}
           fail_on_unmatched_files: true

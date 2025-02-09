@@ -1,0 +1,19 @@
+[package]
+name = "aquestalk-proxyd"
+version = "0.2.0"
+edition = "2021"
+authors = ["Na-x4 <Na-x4@outlook.com>"]
+license = "AGPL-3.0-or-later"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aquestalk-proxy = { path = "../lib" }
+getopts = "0.2"
+libloading = "0.8"
+optional_take = "0.1.0"
+serde_json = "1.0"
+threadpool = "1.8"
+
+[dev-dependencies]
+encoding_rs = "0.8"
