@@ -48,9 +48,7 @@ jobs:
 
       - name: Get version
         id: version
-        run: |
-          cargo --color=always metadata --format-version=1 --no-deps \
-          | jq -r '"CARGO_PKG_VERSION=" + .packages[].version' >> $GITHUB_OUTPUT
+        run: echo "CARGO_PKG_VERSION=$(./scripts/print-version.sh)" >> $GITHUB_OUTPUT
       - name: Package
         run: |
           mkdir release && cd release \
@@ -59,6 +57,10 @@ jobs:
           && cp ../README.md ./ \
           && cp ../COPYING ./ \
           && zip -r ../aquestalk-proxy_v${{ steps.version.outputs.CARGO_PKG_VERSION }}.zip *
+      - name: Verify Release Non-Existence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: '! gh release view "v${{ steps.version.outputs.CARGO_PKG_VERSION }}" --repo "${{ github.repository }}"'
       - name: Release
         uses: softprops/action-gh-release@v2
         with:

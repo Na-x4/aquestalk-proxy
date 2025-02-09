@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eux
 if [ -e aquestalk ]; then
   exit 1
