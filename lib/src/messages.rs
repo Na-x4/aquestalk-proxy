@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 Na-x4
+// Copyright (c) 2021-2025 Na-x4
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
